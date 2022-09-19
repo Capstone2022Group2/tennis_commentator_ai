@@ -3,7 +3,7 @@
 # with pip: pip install opencv-contrib-python                             *
 # *************************************************************************
 
-# to run: python vid_to_image.py -v <video_title> -f <frame_to_capture> (eg: -f 100 means save every 100th frame) -d <directory_to_place_images>
+# to run: python bin/vid_to_image.py -v <video_title> -f <frame_to_capture> (eg: -f 100 means save every 100th frame) -d <directory_to_place_images>
 
 import cv2
 import sys
@@ -11,7 +11,7 @@ import getopt
 import os
 
 frame_to_capture = 1
-target_dir = 'data'
+target_dir = 'images'
 
 try:
   opts, args = getopt.getopt(sys.argv[1:],"v:f:d:")
@@ -47,7 +47,7 @@ while success:
   
   if(count % frame_to_capture == 0):
     img += 1
-    cv2.imwrite(f'${target_dir}/frame%d.jpg' % img, image)     # save frame as JPEG file 
+    cv2.imwrite(f'{target_dir}/frame{img}.jpg', image)     # save frame as JPEG file 
   
   success,image = vidcap.read()
   count = (count + 1) % frame_to_capture
