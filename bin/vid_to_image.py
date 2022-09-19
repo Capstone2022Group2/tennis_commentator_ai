@@ -3,6 +3,8 @@
 # with pip: pip install opencv-contrib-python                             *
 # *************************************************************************
 
+# to run: python vid_to_image.py -v <video_title> -f <frame_to_capture> (eg: -f 100 means save every 100th frame) -d <directory_to_place_images>
+
 import cv2
 import sys
 import getopt
