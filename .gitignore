@@ -1,0 +1,7 @@
+# A folder to put testing data/videos/anything else I don't wan't to commit
+/no_commit
+# venv stuff
+*.cfg
+lib
+Include
+Scripts
