@@ -1,6 +1,10 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 
 # python yolov5/detect.py --weights trained_models/trained/object_detect1.pt --img 640 --conf 0.45 --source trained_models/test_vid/test_match.mp4
+
+#python -m yolov5.detect --weights trained_models/trained/object_detect1.pt --img 640 --conf 0.45 --source no_commit/debug_img.jpg
+# python yolov5/detect.py --weights trained_models/trained/object_detect1.pt --img 640 --conf 0.45 --source no_commit/debug_img.jpg
+
 """
 Run YOLOv5 detection inference on images, videos, directories, globs, YouTube, webcam, streams, etc.
 
@@ -26,6 +30,8 @@ Usage - formats:
                                  yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
                                  yolov5s_paddle_model       # PaddlePaddle
 """
+
+from point_detection import *
 
 import argparse
 import os
@@ -158,8 +164,13 @@ def run(
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
+                checkIfBallInBounds(det, imc)
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
+                    
+                    # #cropped_image = img[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2]), ::-1]
+
+                   
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
