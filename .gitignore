@@ -5,3 +5,6 @@
 lib
 Include
 Scripts
+# pychache
+**/__pycache__
+yolov5/runs
