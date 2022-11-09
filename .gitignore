@@ -5,3 +5,7 @@
 lib
 Include
 Scripts
+*.txt
+*.csv
+*.mp4
+*.mov
