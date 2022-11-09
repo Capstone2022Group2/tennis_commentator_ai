@@ -30,13 +30,12 @@ for filename in os.listdir(directory):
             framename = tokens[len(tokens) - 1].removesuffix('.txt')
             dataObjs = {}
             
-            # dataObjs is a dictionary. each index is a yolov5 class, with ball = 0, court = 1, net = 2, palyer = 3, player = 4.
+            # dataObjs is a dictionary. each index is a yolov5 class, with ball = 0, court = 1, net = 2, player = 3.
             # each element is a list, since we can detect more than one item of each kind.
             dataObjs[0] = []
             dataObjs[1] = []
             dataObjs[2] = []
             dataObjs[3] = []
-            dataObjs[4] = []
             
             for line in lines:
                 if line != '':
