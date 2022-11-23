@@ -9,3 +9,4 @@ Scripts
 *.csv
 *.mp4
 *.mov
+!*dataset.txt

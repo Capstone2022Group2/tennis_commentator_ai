@@ -2,6 +2,7 @@ import os
 import types
 import pandas as pd
 import csv
+import random
 
 class DataObj:
     def __init__(self, xcenter, ycenter, width, height, conf):
@@ -58,9 +59,10 @@ with open(os.path.join('dataset', 'annotations.csv'), 'r') as f:
     
 outputData = {}
             
-for i in range(1, 2545): # should be for i in range(1, data) for a full video annotation. stop it on the frame that you get to when annotating a video.
+for i in range(110, 9790): # should be for i in range(1, data) for a full video annotation. stop it on the frame that you get to when annotating a video.
     if i in data and i-1 in data and i+1 in data and i-2 in data and i+2 in data:
-        # we need an empty ball object otherwise python complains.
+        if len(data[i][0]) == 0 and len(data[i-1][0]) == 0 and len(data[i+1][0]) == 0:
+            continue
         if len(data[i][0]) == 0:
             data[i][0].append(emptyBallObj)
         if len(data[i-1][0]) == 0:
@@ -72,7 +74,7 @@ for i in range(1, 2545): # should be for i in range(1, data) for a full video an
         if len(data[i+2][0]) == 0:
             data[i+2][0].append(emptyBallObj)
         # access the first element of the ball (0) index on the ith frame
-        dataFrameRow = data[i][0][0].toFrameRow() + data[i-1][0][0].toFrameRow() + data[i-2][0][0].toFrameRow() + data[i+1][0][0].toFrameRow() + data[i+2][0][0].toFrameRow()
+        dataFrameRow = data[i][0][0].toFrameRow() + data[i-1][0][0].toFrameRow() #+ data[i+1][0][0].toFrameRow() + data[i-2][0][0].toFrameRow() + data[i+2][0][0].toFrameRow()
         
         # append our annotations to the dataframe. hit is first y column, bounce is second
         if i in annotations:
@@ -83,12 +85,20 @@ for i in range(1, 2545): # should be for i in range(1, data) for a full video an
             else:
                 dataFrameRow += [0, 0]
         else:
+            #filter out some of the 0s
+            if random.randint(1, 100) < 99:
+                continue
             dataFrameRow += [0, 0]
         
         outputData[i] = dataFrameRow
+        
+
             
 # convert to dataframe and output to a file usable by event.py
 df = pd.DataFrame.from_dict(outputData, orient='index')
 df = df.loc[(df!=0).any(axis=1)] # this line deletes all rows that are all zeroes. don't ask me about this. i don't know. but it does work.
 with open(os.path.join('dataset', 'dataset.txt'), 'w+') as f:   
     f.write(df.to_string())
+
+if os.path.exists(os.path.join('trained_model', 'event_model_v1.joblib')):  
+    os.remove(os.path.join('trained_model', 'event_model_v1.joblib'))
