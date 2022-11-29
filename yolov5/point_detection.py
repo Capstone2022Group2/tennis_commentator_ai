@@ -4,16 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
-# import os
-# os.environ['KMP_DUPLICATE_LIB_OK']='True'
-
 import torch
 
-from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
-                           increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh,xywh2xyxy, clip_boxes)
-from utils.plots import Annotator, colors, save_one_box
+from utils.general import (cv2, xyxy2xywh,xywh2xyxy, clip_boxes)
+from utils.plots import save_one_box
 
-from collections import defaultdict
+#from collections import defaultdict
 
 def visualize_colors(cluster, centroids):
     # Get the number of different clusters, create histogram, and normalize
@@ -41,15 +37,18 @@ def eliminateContour(c):
     return False
 
 def getHSVColorRange(color):
+    # convert color to HSV
     hsv_color1 = cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_RGB2HSV)[0][0]
     hsv_color2 = cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_RGB2HSV)[0][0]
 
     origional = hsv_color1
 
+    # highest value of color we want to accept
     hsv_color2[0] = origional[0] + 10
     hsv_color2[1] = 255
     hsv_color2[2] = 255
 
+    # lowest value we want to accept
     hsv_color1[0] = origional[0] - 10
     hsv_color1[1] = 100
     hsv_color1[2] = 100
@@ -57,16 +56,15 @@ def getHSVColorRange(color):
     return hsv_color1, hsv_color2
 
 def checkBall(contours, ball_pos, img):
-    print(ball_pos)
     b = ball_pos
 
     x = b[0,0]
     y = b[0,1]
     w = b[0,2] - x
     h = b[0,3] -y
-    # below circle to denote mid point of center line
+
+    # center of the ball
     center = (int(x)+int(w)//2, int(y)+int(h)//2)
-    #radius = 2
 
     for c in contours:
         result = cv2.pointPolygonTest(c, center, False)
@@ -79,8 +77,6 @@ def checkBall(contours, ball_pos, img):
 
 
 def checkIfBallInBounds(det, imc):
-    print("data########################################################################################################")
-    #print(det)
     
     courts = []
     ball_pos = 0
@@ -94,12 +90,14 @@ def checkIfBallInBounds(det, imc):
         # court
         if (int(cls)) == 1:
             # save the cropped image's position so we can place it onto the origional image later
+            # below code taken from save_one_box in yolov5/utils/plots.py
             currCropDim = xyxy
             currCropDim = torch.tensor(currCropDim).view(-1, 4)
             b = xyxy2xywh(currCropDim)  # boxes
             b[:, 2:] = b[:, 2:] * 1.02 + 10  # box wh * gain + pad
             currCropDim = xywh2xyxy(b).long()
             clip_boxes(currCropDim, img.shape)
+
             cropped_image = save_one_box(xyxy, img, file='result.jpg', BGR=True, save=False)
 
             courtImg = [cropped_image, currCropDim]
@@ -110,18 +108,12 @@ def checkIfBallInBounds(det, imc):
             ball_pos = xyxy
             ball_pos = torch.tensor(ball_pos).view(-1, 4)
 
-            
-            # cv2.waitKey(0) # waits until a key is pressed
-            # cv2.destroyAllWindows() # destroys the window showing image
-
     for (court, cropDim) in courts:
         cropped_image = court
-        contourImg = img.copy()
-        #img2 = cropped_image.copy()
         cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB)
         reshape = cropped_image.reshape((cropped_image.shape[0] * cropped_image.shape[1], 3))
 
-        # Find and display most dominant colors
+        # Find and display most dominant colors in the cropped image
         cluster = KMeans(n_clusters=5).fit(reshape)
 
         labels = np.arange(0, len(np.unique(cluster.labels_)) + 1)
@@ -130,29 +122,23 @@ def checkIfBallInBounds(det, imc):
         hist /= hist.sum()
 
         colors = sorted([(percent, color) for (percent, color) in zip(hist, cluster.cluster_centers_)])
-
-        #img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_hsv = cv2.cvtColor(cropped_image, cv2.COLOR_RGB2HSV)
 
+        # get range of hsv colors for the two most dominant colors in the cropped image
         hsv_color1, hsv_color2 = getHSVColorRange(colors[len(colors)-1][1])
         hsv_color3, hsv_color4 = getHSVColorRange(colors[len(colors)-2][1])
-        # hsv_color5, hsv_color6 = getHSVColorRange(colors[len(colors)-3][1])
-        # hsv_color7, hsv_color8 = getHSVColorRange(colors[len(colors)-4][1])
-        # hsv_color9, hsv_color10 = getHSVColorRange(colors[len(colors)-5][1])
 
-
+        # create a black and white mask that only highlights the part of the image within the color ranges
         mask = cv2.inRange(img_hsv, hsv_color1, hsv_color2)
         mask2 = cv2.inRange(img_hsv, hsv_color3, hsv_color4)
-        # mask3 = cv2.inRange(img_hsv, hsv_color5, hsv_color6)
-        # mask4 = cv2.inRange(img_hsv, hsv_color7, hsv_color8)
-        # mask5 = cv2.inRange(img_hsv, hsv_color9, hsv_color10)
         resMask = mask | mask2 
         #blur_mask = cv2.GaussianBlur(mask,(5, 5),0)
-        #mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
-        #ret, thresh = cv2.threshold(mask, 127, 255, 0)
+        # get the largest contours of the mask.  This should be the outline of the court (more or less)
         contours = cv2.findContours(resMask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
         contours = [c for c in contours if not eliminateContour(c)]
+
+        # TODO make contour smoothing work
         #big_contour = max(contours, key=cv2.contourArea)
 
         # for c in contours:
@@ -189,17 +175,11 @@ def checkIfBallInBounds(det, imc):
 
         # place the cropped image back into the origional image
         #img[int(cropDim[0, 1]):int(cropDim[0, 3]), int(cropDim[0, 0]):int(cropDim[0, 2]), ::-1] = cropped_image
+
         #cv2.imshow('contour', contourImg)
         cv2.imshow('box', img)
-        #cv2.imshow('mask', resMask)
-        #cv2.imshow('box', edge)
-
-        # plt.imshow(mask, cmap='gray')   # this colormap will display in black / white
-        # plt.savefig('mygraph.png')
-
-        # res = cv2.bitwise_and(img_hsv, img, mask=mask)
-        # cv2.imshow("mask", res)
-
+        
+        # --- Debugging hsv conversion ---
         # visualize = visualize_colors(cluster, cluster.cluster_centers_)
         # visualize = cv2.cvtColor(visualize, cv2.COLOR_RGB2BGR)
         #cv2.imshow('visualize', visualize)
