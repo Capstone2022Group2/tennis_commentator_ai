@@ -5,3 +5,4 @@
 lib
 Include
 Scripts
+yolov5/runs/detect
