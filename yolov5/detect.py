@@ -3,7 +3,7 @@
 # python yolov5/detect.py --weights trained_models/trained/object_detect1.pt --img 640 --conf 0.45 --source trained_models/test_vid/test_match.mp4
 
 #python -m yolov5.detect --weights trained_models/trained/object_detect1.pt --img 640 --conf 0.45 --source no_commit/debug_img.jpg
-# python yolov5/detect.py --weights trained_models/trained/object_detect1.pt --img 640 --conf 0.45 --source no_commit/debug_img.jpg
+# python yolov5/detect.py --weights trained_models/trained/object_detect2.pt --img 640 --conf 0.45 --source no_commit/debug_img.jpg
 
 """
 Run YOLOv5 detection inference on images, videos, directories, globs, YouTube, webcam, streams, etc.
@@ -164,7 +164,7 @@ def run(
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-                checkIfBallInBounds(det, imc)
+                im0 = checkIfBallInBounds(det, imc)
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     
@@ -185,7 +185,7 @@ def run(
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # Stream results
-            im0 = annotator.result()
+            #im0 = annotator.result()
             if view_img:
                 if platform.system() == 'Linux' and p not in windows:
                     windows.append(p)
