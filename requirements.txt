@@ -47,3 +47,5 @@ thop>=0.1.1  # FLOPs computation
 # roboflow
 
 moviepy~=1.0.3
+tensorflow~=2.10.0
+keras~=2.10.0
