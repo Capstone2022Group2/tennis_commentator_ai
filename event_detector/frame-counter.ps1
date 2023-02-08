@@ -1,0 +1,1 @@
+ffmpeg -i "The Most Brutal Attacking Tennis by Roger Federer-h61F2j_2GTE.mp4" -vf "drawtext=fontfile=Arial.ttf: text=%{n}: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099" -y output.mov
