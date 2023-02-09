@@ -37,27 +37,21 @@ def eliminateContour(c):
 # Takes a RGB color and converts to HSV.  Then modifies that value to get and upper and lower bound of acceptable colors
 # Values are derived from trial and error for best results
 def getHSVColorRange(color):
-    # convert color to HSV
     hsv_color1 = cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_RGB2HSV)[0][0]
     hsv_color2 = cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_RGB2HSV)[0][0]
 
-    #print(hsv_color1, hsv_color2)
-
     origional1 = hsv_color1.copy()
-
     origional2 = hsv_color2.copy()
 
     # highest value of color we want to accept
     hsv_color2[0] = (origional2[0] + 7) if origional2[0] + 7 <= 180 else 180 # H value cannot exceed 180
     hsv_color2[1] = (origional2[1] + 30) if origional2[1] + 30 <= 255 else 255 # S value cannot exceed 255
-    hsv_color2[2] = (origional2[2] + 40) if origional2[2] + 40 <= 255 else 255 # H value cannot exceed 180
+    hsv_color2[2] = (origional2[2] + 40) if origional2[2] + 40 <= 255 else 255 
 
-
+    # lowest value
     hsv_color1[0] = (origional1[0] - 7) if origional1[0] - 7 >= 0 else 0
     hsv_color1[1] = (origional1[1] - 30) if origional1[1] - 30 >= 15 else 15 # S value arbitrarily set to min of 15
     hsv_color1[2] = 35 # V value arbitrarily set to 30 to avoid black colors being allowed
-
-    #print(hsv_color1, hsv_color2)
 
     # ----- visualize colors for debug ------
 
@@ -92,7 +86,7 @@ def checkBall(contours, ball_pos, img):
     #b = xyxy2xywh(ball_pos)
     #cv2.rectangle(img, (int(b[0,0]), int(b[0,1])), (int(b[0,2]), int(b[0,3])), (36,255,12), 1)
 
-def checkIfBallInBounds(det, imc):
+def checkIfBallInBounds(det, imc, show_data=False):
     courts = []
     ball_pos = 0
 
@@ -106,7 +100,7 @@ def checkIfBallInBounds(det, imc):
         
         # court
         if (int(cls)) == 1:
-            # save the cropped image's position so we can place it onto the origional image later
+            # save the cropped image's dimensions so we can scale contours to full size later
             # below code taken from save_one_box in yolov5/utils/plots.py
             currCropDim = xyxy
             currCropDim = torch.tensor(currCropDim).view(-1, 4)
@@ -152,108 +146,91 @@ def checkIfBallInBounds(det, imc):
         mask = cv2.inRange(img_hsv, hsv_color1, hsv_color2)
         mask2 = cv2.inRange(img_hsv, hsv_color3, hsv_color4)
         resMask = mask | mask2
-
         #cv2.imshow('res mask', resMask)
 
-        #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7,7))
-
-        # arbitrarily choosing rectangle structuring element to widen the gap between lines of the court
+        # arbitrarily choosing small rectangle structuring element to widen the gap between lines of the court
         # This makes is easier to eliminate the doubles area from the contours
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 4))
         resMask = cv2.morphologyEx(resMask, cv2.MORPH_OPEN, kernel)
-       
-        #blur_mask = cv2.GaussianBlur(mask,(5, 5),0)
 
         # get the largest contours of the mask.  This should be the outline of the court (more or less)
         contours = cv2.findContours(resMask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
         contours = [c for c in contours if not eliminateContour(c)]
 
-        # dilate contours to remove noise
+        # need to patch up any space left between the contours like the net, players and lines
+        # Choose a large structuring element because irrelevent contours should be eliminated by now
         bmask = np.zeros((cropped_image.shape[0], cropped_image.shape[1]), np.uint8)
         bmask = cv2.drawContours(bmask,contours,-1,255, -1)
         #cv2.imshow('b mask', bmask)
-
-        
-        #dilate_mask = cv2.dilate(bmask, kernel, iterations=1)
-
-        # need to patch up any space left between the contours like the net, players and lines
-        # Choose a large structuring element because irrelivent contours should be eliminated by now
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
         dilate_mask = cv2.morphologyEx(bmask, cv2.MORPH_CLOSE, kernel)
         #cv2.imshow('dialate mask', dilate_mask)
         #cv2.waitKey(0) # waits until a key is pressed
 
         court_boundry = cv2.findContours(dilate_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
-        
 
         # scale the contours so that the poisiton is relative to the origional image instead of the cropped image
-        # Do this by offsetting each point in the contour by the location of the cropped image's position
+        # Do this by offsetting each point in the contour by the location of the cropped image's position relative to the full img
         for c in court_boundry:
             for point in c:
                 for point2 in point:
                     point2[1] += int(cropDim[0, 1])
                     point2[0] += int(cropDim[0, 0])
-                   
-            # x,y,w,h = cv2.boundingRect(c)
-            # cv2.putText(img, str(w), (x,y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
-            # cv2.rectangle(cropped_image, (x, y), (x + w, y + h), (36,255,12), 1)
-            # cv2.imshow('boxes'+ str(cn) + str(i), cropped_image)
-            # i+=1
 
         # create a convex hull around contours to get a smooth court boundary
         length = len(court_boundry)
-        # concatinate poits form all shapes into one array
+        # concatinate points from all shapes into one array
         uni_hull = []
         if(length > 0):
             cont = np.vstack([court_boundry[i] for i in range(length)])
             hull = cv2.convexHull(cont)
             uni_hull.append(hull) # <- array as first element of list
-            
-            cv2.drawContours(img,uni_hull,-1,(0,255,0),2)
             #cv2.imshow('image', img)
 
-        # TODO detect using uni_hull when accuracy is improved
         if ball_detected:
             if checkBall(uni_hull, ball_pos, img):
                 ballInCourt = True
-
-        #cv2.imshow('contour', contourImg)
-        #cv2.imshow('box', img)
         
-        # --- Debugging hsv conversion ---
         cn +=1
-        #cv2.imshow('contour', contourImg)
-       
-    font                   = cv2.FONT_HERSHEY_SIMPLEX
-    bottomLeftCornerOfText = (450,700)
-    fontScale              = 2
-    fontColor              = (255,255, 0)
-    thickness              = 5
-    lineType               = 3
-    if ballInCourt:
-        cv2.putText(img,'In Court', 
+    
+    # Draw court boundry and ball status for debug:
+    if(show_data):
+        # draw court boundary
+        cv2.drawContours(img,uni_hull,-1,(0,255,0),2)
+
+        # format text
+        font                   = cv2.FONT_HERSHEY_SIMPLEX
+        bottomLeftCornerOfText = (450,700)
+        fontScale              = 2
+        fontColor              = (255,255, 0)
+        thickness              = 5
+        lineType               = 3
+
+        # draw text for debug
+        if ballInCourt:
+            cv2.putText(img,'In Court', 
+                bottomLeftCornerOfText, 
+                font, 
+                fontScale,
+                fontColor,
+                thickness,
+                lineType)
+        elif not ball_detected:
+            cv2.putText(img,'No Ball', 
+                bottomLeftCornerOfText, 
+                font, 
+                fontScale,
+                fontColor,
+                thickness,
+                lineType)
+        else:
+            cv2.putText(img,'Not in Court', 
             bottomLeftCornerOfText, 
             font, 
             fontScale,
             fontColor,
             thickness,
             lineType)
-    elif not ball_detected:
-        cv2.putText(img,'No Ball', 
-            bottomLeftCornerOfText, 
-            font, 
-            fontScale,
-            fontColor,
-            thickness,
-            lineType)
-    else:
-        cv2.putText(img,'Not in Court', 
-        bottomLeftCornerOfText, 
-        font, 
-        fontScale,
-        fontColor,
-        thickness,
-        lineType)
 
     
     # cv2.imshow('final', img)

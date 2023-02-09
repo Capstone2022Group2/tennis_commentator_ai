@@ -30,17 +30,17 @@ event_det_model = event_mod.load_model()
 # player = cv2.VideoCapture(play.url)
 # width = int(player.get(cv2.CAP_PROP_FRAME_WIDTH))
 # height = int(player.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
 # success,image = player.read()
+# --------------------------------------------------------
 
 #----Detect using downloaded video----
 player = cv2.VideoCapture('no_commit/single_rally.mp4')
 success,image = player.read()
 height, width, layers = image.shape
 size = (width, height)
+# ----------------------------------------------------------
 
 out = cv2.VideoWriter('no_commit/results_fixed.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
-
 
 prev_frame_data = []
 count = 0
@@ -53,15 +53,18 @@ while success:
 
   # plot object detection boxes
   boxes = det_objects.xyxyn[0][:, -1].numpy(), det_objects.xyxyn[0][:, :-1].numpy()
-  #objects_frame = plot_boxes(boxes, image)
+  #objects_frame = plot_boxes(object_det_model, boxes, image)
   prev_frame_data, bounce_detected = detect_bounces(boxes, prev_frame_data, count, event_det_model)
+
+  # doing this every frame for debug purpose
   det = det_objects.xyxy[0]
-  image, ball_in_bounds = checkIfBallInBounds(det, image)
+  image, ball_in_bounds = checkIfBallInBounds(det, image, show_data=True)
 
   if bounce_detected:
     display_bounce = 0
     #detect if ball is in bounds and draw court boundary
     det = det_objects.xyxy[0]
+    #image, ball_in_bounds = checkIfBallInBounds(det, image, show_data=False)
     
 
   ### DEBUG ###

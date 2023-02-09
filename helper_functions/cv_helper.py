@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import cv2
 
 # code reused from yolov5 utils/general.py
 #from collections import defaultdict
@@ -46,7 +47,7 @@ def save_one_box(xyxy, im, file, gain=1.02, pad=10, square=False, BGR=False, sav
     crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2]), ::(1 if BGR else -1)]
     return crop
 
-def plot_boxes(results, frame):
+def plot_boxes(model, results, frame):
         labels, cord = results
         n = len(labels)
         x_shape, y_shape = frame.shape[1], frame.shape[0]
@@ -56,6 +57,6 @@ def plot_boxes(results, frame):
                 x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
                 bgr = (0, 255, 0)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2)
-                cv2.putText(frame, obj_det_model.names[int(labels[i])], (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
+                cv2.putText(frame, model.names[int(labels[i])], (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
 
         return frame
