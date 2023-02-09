@@ -8,7 +8,7 @@ import joblib
 
 # Gets the data with which to build and/or test a new model
 def get_data():
-    data = pd.read_fwf(os.path.join('dataset', 'dataset.txt'))
+    data = pd.read_fwf(os.path.join('ai_models/event_detector/dataset', 'dataset.txt'))
     # prep data
     columns = len(data.columns)
     hitColumnsKey = str(columns - 3)
@@ -28,11 +28,12 @@ def build_model():
 
 # Load a certain model
 def load_model():
-    return joblib.load(os.path.join('trained_model', 'event_model_v1.joblib'))
+    return joblib.load(os.path.join('ai_models/event_detector/trained_model', 'event_model_v1.joblib'))
     
 # Display test results for the model that is loaded
 def print_test_matrix():
     x_train, x_test, y_train, y_test = get_data()
+    print(x_test)
     rf = load_model()
     y_rf_test_pred = rf.predict(x_test)
     # get results

@@ -1,4 +1,4 @@
-from operator import truediv
+# from operator import truediv
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
@@ -43,17 +43,19 @@ def getHSVColorRange(color):
 
     #print(hsv_color1, hsv_color2)
 
-    origional = hsv_color1.copy()
+    origional1 = hsv_color1.copy()
+
+    origional2 = hsv_color2.copy()
 
     # highest value of color we want to accept
-    hsv_color2[0] = (origional[0] + 7) if origional[0] + 7 <= 180 else 180 # H value cannot exceed 180
-    hsv_color2[1] = (origional[1] + 30) if origional[1] + 30 <= 255 else 255 # S value cannot exceed 255
-    hsv_color2[2] = (origional[0] + 50) if origional[0] + 50 <= 255 else 255 # H value cannot exceed 180
+    hsv_color2[0] = (origional2[0] + 7) if origional2[0] + 7 <= 180 else 180 # H value cannot exceed 180
+    hsv_color2[1] = (origional2[1] + 30) if origional2[1] + 30 <= 255 else 255 # S value cannot exceed 255
+    hsv_color2[2] = (origional2[2] + 40) if origional2[2] + 40 <= 255 else 255 # H value cannot exceed 180
 
 
-    hsv_color1[0] = (origional[0] - 7) if origional[0] - 7 >= 0 else 0
-    hsv_color1[1] = (origional[1] - 15) if origional[1] - 15 >= 30 else 30 # S value arbitrarily set to min of 15
-    hsv_color1[2] = 50 # V value arbitrarily set to 30 to avoid black colors being allowed
+    hsv_color1[0] = (origional1[0] - 7) if origional1[0] - 7 >= 0 else 0
+    hsv_color1[1] = (origional1[1] - 30) if origional1[1] - 30 >= 15 else 15 # S value arbitrarily set to min of 15
+    hsv_color1[2] = 35 # V value arbitrarily set to 30 to avoid black colors being allowed
 
     #print(hsv_color1, hsv_color2)
 
@@ -151,6 +153,14 @@ def checkIfBallInBounds(det, imc):
         mask2 = cv2.inRange(img_hsv, hsv_color3, hsv_color4)
         resMask = mask | mask2
 
+        #cv2.imshow('res mask', resMask)
+
+        #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7,7))
+
+        # arbitrarily choosing rectangle structuring element to widen the gap between lines of the court
+        # This makes is easier to eliminate the doubles area from the contours
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 4))
+        resMask = cv2.morphologyEx(resMask, cv2.MORPH_OPEN, kernel)
        
         #blur_mask = cv2.GaussianBlur(mask,(5, 5),0)
 
@@ -161,9 +171,17 @@ def checkIfBallInBounds(det, imc):
         # dilate contours to remove noise
         bmask = np.zeros((cropped_image.shape[0], cropped_image.shape[1]), np.uint8)
         bmask = cv2.drawContours(bmask,contours,-1,255, -1)
+        #cv2.imshow('b mask', bmask)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7,7))
-        dilate_mask = cv2.dilate(bmask, kernel, iterations=1)
+        
+        #dilate_mask = cv2.dilate(bmask, kernel, iterations=1)
+
+        # need to patch up any space left between the contours like the net, players and lines
+        # Choose a large structuring element because irrelivent contours should be eliminated by now
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
+        dilate_mask = cv2.morphologyEx(bmask, cv2.MORPH_CLOSE, kernel)
+        #cv2.imshow('dialate mask', dilate_mask)
+        #cv2.waitKey(0) # waits until a key is pressed
 
         court_boundry = cv2.findContours(dilate_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
         
@@ -182,21 +200,21 @@ def checkIfBallInBounds(det, imc):
             # cv2.imshow('boxes'+ str(cn) + str(i), cropped_image)
             # i+=1
 
-#################################################
-
         # create a convex hull around contours to get a smooth court boundary
         length = len(court_boundry)
         # concatinate poits form all shapes into one array
+        uni_hull = []
         if(length > 0):
-            cont = np.vstack(court_boundry[i] for i in range(length))
+            cont = np.vstack([court_boundry[i] for i in range(length)])
             hull = cv2.convexHull(cont)
-            uni_hull = []
             uni_hull.append(hull) # <- array as first element of list
+            
             cv2.drawContours(img,uni_hull,-1,(0,255,0),2)
-#########################################################################################      
+            #cv2.imshow('image', img)
 
+        # TODO detect using uni_hull when accuracy is improved
         if ball_detected:
-            if checkBall(court_boundry, ball_pos, img):
+            if checkBall(uni_hull, ball_pos, img):
                 ballInCourt = True
 
         #cv2.imshow('contour', contourImg)
@@ -242,5 +260,5 @@ def checkIfBallInBounds(det, imc):
     # cv2.waitKey(0) # waits until a key is pressed
     # cv2.destroyAllWindows() # destroys the window showing image
     
-    return img
+    return img, ballInCourt
    

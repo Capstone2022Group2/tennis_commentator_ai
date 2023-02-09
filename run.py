@@ -2,16 +2,22 @@ import torch
 import cv2
 import pafy
 from time import time
-from bin.point_detection import *
+from event_detection.point_detection import *
+from event_detection.bounce_detection import *
+from helper_functions.cv_helper import plot_boxes
+import ai_models.event_detector.event as event_mod
+import os
 
-model = torch.hub.load('ultralytics/yolov5', 'custom', 'trained_models/trained/object_detect5.pt')  # custom trained model
+obj_det_model = torch.hub.load('ultralytics/yolov5', 'custom', 'ai_models/object_detection/trained/object_detect5.pt')  # custom trained model
+event_det_model = event_mod.load_model()
 
 # Images
 
 ################TEST#######################################
-# url = 'images111/frame1016.jpg'  # or file, Path, URL, PIL, OpenCV, numpy, list
-# results = model(url)
+# url = 'no_commit/test_images/frame943.jpg'  # or file, Path, URL, PIL, OpenCV, numpy, list
+# results = obj_det_model (url)
 # det = results.xyxy[0]
+# print(det)
 # img = cv2.imread(url) 
 # my_img = checkIfBallInBounds(det, img)
 # cv2.imshow('rect', my_img) 
@@ -19,60 +25,72 @@ model = torch.hub.load('ultralytics/yolov5', 'custom', 'trained_models/trained/o
 
 
 ###REAL############
-
-def plot_boxes(results, frame):
-        labels, cord = results
-        n = len(labels)
-        x_shape, y_shape = frame.shape[1], frame.shape[0]
-        for i in range(n):
-            row = cord[i]
-            if row[4] >= 0.2:
-                x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
-                bgr = (0, 255, 0)
-                cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2)
-                cv2.putText(frame, model.names[int(labels[i])], (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
-
-        return frame
-
 #----Detect using URL----
-play = pafy.new('https://www.youtube.com/watch?v=oyxhHkOel2I&t=1s').streams[-1]
-player = cv2.VideoCapture(play.url)
-width = int(player.get(cv2.CAP_PROP_FRAME_WIDTH))
-height = int(player.get(cv2.CAP_PROP_FRAME_HEIGHT))
+# play = pafy.new('https://www.youtube.com/watch?v=oyxhHkOel2I&t=1s').streams[-1]
+# player = cv2.VideoCapture(play.url)
+# width = int(player.get(cv2.CAP_PROP_FRAME_WIDTH))
+# height = int(player.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-success,image = player.read()
+# success,image = player.read()
 
 #----Detect using downloaded video----
-# player = cv2.VideoCapture('no_commit/short_test.mp4')
-# success,image = player.read()
-#height, width, layers = image.shape
-
+player = cv2.VideoCapture('no_commit/single_rally.mp4')
+success,image = player.read()
+height, width, layers = image.shape
 size = (width, height)
 
-out = cv2.VideoWriter('no_commit/results.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
+out = cv2.VideoWriter('no_commit/results_fixed.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
 
+
+prev_frame_data = []
 count = 0
+display_bounce = -1
 while success:
   start_time = time()
   print(f"detecting frame: ${count}")
 
-  results = model(image)
-
-  # detect if ball is in bounds and draw court boundary
-  det = results.xyxy[0]
-  court_boundary = checkIfBallInBounds(det, image)
+  det_objects = obj_det_model(image)
 
   # plot object detection boxes
-  boxes = results.xyxyn[0][:, -1].numpy(), results.xyxyn[0][:, :-1].numpy()
-  objects = plot_boxes(boxes, image)
-  
-  end_time = time()
-  fps = 1/np.round(end_time - start_time, 3)
-  print(f"Frames Per Second : {fps}")
+  boxes = det_objects.xyxyn[0][:, -1].numpy(), det_objects.xyxyn[0][:, :-1].numpy()
+  #objects_frame = plot_boxes(boxes, image)
+  prev_frame_data, bounce_detected = detect_bounces(boxes, prev_frame_data, count, event_det_model)
+  det = det_objects.xyxy[0]
+  image, ball_in_bounds = checkIfBallInBounds(det, image)
+
+  if bounce_detected:
+    display_bounce = 0
+    #detect if ball is in bounds and draw court boundary
+    det = det_objects.xyxy[0]
+    
+
+  ### DEBUG ###
+  if display_bounce <= 5 and display_bounce >=0:
+    in_bounds = ball_in_bounds
+    cv2.putText(image,'bounce', 
+            (280,100), 
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            2,
+            (255,255, 0),
+            5,
+            3)
+    
+    text = 'in bounds' if in_bounds else 'not in bounds'
+    cv2.putText(image, text, 
+            (550,100), 
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            2,
+            (255,255, 0),
+            5,
+            3)
+    display_bounce += 1
+  else:
+    display_bounce = -1
+
 
   # add frames to the output video
-  out.write(court_boundary)
-  #out.write(objects)
+  out.write(image)
+  #out.write(objects_frame)
   count +=1
   
   success,image = player.read()
