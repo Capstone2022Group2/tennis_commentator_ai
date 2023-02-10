@@ -7,6 +7,8 @@ from keras.layers import Dense
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 import tensorflow as tf
 
+# TODO: ONE-HOT-ENCODING this should avoid the model thinking there is an ordering to the labels
+# TODO: add training data, ensure sample rate of audio file doesnt affect output
 
 # CONSTANTS
 from sklearn.preprocessing import LabelEncoder
