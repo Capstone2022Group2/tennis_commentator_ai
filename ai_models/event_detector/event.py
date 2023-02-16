@@ -5,10 +5,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
 import joblib
+import compile_data
 
 # Gets the data with which to build and/or test a new model
 def get_data():
-    data = pd.read_fwf(os.path.join('ai_models/event_detector/dataset', 'dataset.txt'))
+    data = pd.read_fwf(os.path.join('dataset', 'dataset.txt'))
     # prep data
     columns = len(data.columns)
     hitColumnsKey = str(columns - 3)
@@ -20,32 +21,41 @@ def get_data():
     return (x_train, x_test, y_train, y_test)
 
 # Build a new model
-def build_model():
+def build_model(path):
+    if os.path.exists(os.path.join(path, 'event_model_v1.joblib')):  
+        os.remove(os.path.join(path, 'event_model_v1.joblib'))
+    
     x_train, x_test, y_train, y_test = get_data()
     rf = RandomForestClassifier(max_depth=10, random_state=1)
     rf.fit(x_train, y_train)
-    joblib.dump(rf, os.path.join('trained_model', 'event_model_v1.joblib'))
+    joblib.dump(rf, os.path.join(path, 'event_model_v1.joblib'))
 
 # Load a certain model
-def load_model():
-    return joblib.load(os.path.join('ai_models/event_detector/trained_model', 'event_model_v1.joblib'))
+def load_model(path):
+    return joblib.load(os.path.join(path, 'event_model_v1.joblib'))
     
 # Display test results for the model that is loaded
-def print_test_matrix():
+def print_test_matrix(path):
     x_train, x_test, y_train, y_test = get_data()
-    print(x_test)
-    rf = load_model()
+    rf = load_model(path)
     y_rf_test_pred = rf.predict(x_test)
     # get results
     rf_f_score = f1_score(y_test, y_rf_test_pred)
     print("test f score: ", rf_f_score)
     print(confusion_matrix(y_test, y_rf_test_pred))
-    
-def predict(data):
-    rf = load_model()
+
+# If you have a valid dataframe row to make a prediction on, use this    
+def predict_from_dataframe(data, path):
+    rf = load_model(path)
     return rf.predict(data)
 
+# Make a prediction based on the dictionary format
+def predict_from_dict(data, path):
+    return predict_from_dataframe(compile_data.compile(data, path))
+
 if (__name__ == "__main__"):
-    print_test_matrix()
+    path = 'trained_model'
+    build_model(path)
+    print_test_matrix(path)
 
 # TODO: Investigate data augmentation for the model
