@@ -4,6 +4,7 @@ import pafy
 from time import time
 from event_detection.point_detection import *
 from event_detection.bounce_detection import *
+from event_detection.court_detection import *
 from helper_functions.cv_helper import plot_boxes
 import ai_models.event_detector.event as event_mod
 import os
@@ -34,7 +35,7 @@ event_det_model = event_mod.load_model()
 # --------------------------------------------------------
 
 #----Detect using downloaded video----
-player = cv2.VideoCapture('no_commit/single_rally.mp4')
+player = cv2.VideoCapture('no_commit/short_test.mp4')
 success,image = player.read()
 height, width, layers = image.shape
 size = (width, height)
@@ -58,7 +59,8 @@ while success:
 
   # doing this every frame for debug purpose
   det = det_objects.xyxy[0]
-  image, ball_in_bounds = checkIfBallInBounds(det, image, show_data=True)
+  image, boundaries = get_court_boundary(det, image, show_data=True)
+  image, ball_in_bounds = checkIfBallInBounds(det, image, boundaries, show_data=True)
 
   if bounce_detected:
     display_bounce = 0
