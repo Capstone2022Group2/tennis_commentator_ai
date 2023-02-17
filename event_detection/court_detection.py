@@ -109,7 +109,7 @@ def get_court_boundary(det, imo, show_data=False):
         bmask = np.zeros((cropped_image.shape[0], cropped_image.shape[1]), np.uint8)
         bmask = cv2.drawContours(bmask,contours,-1,255, -1)
         #cv2.imshow('b mask', bmask)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (22, 22))
         dilate_mask = cv2.morphologyEx(bmask, cv2.MORPH_CLOSE, kernel)
         #cv2.imshow('dialate mask', dilate_mask)
         #cv2.waitKey(0) # waits until a key is pressed
@@ -140,7 +140,7 @@ def get_court_boundary(det, imo, show_data=False):
 
    
     # cv2.imshow('final', img)
-    # cv2.waitKey(0) # waits until a key is pressed
+    #cv2.waitKey(0) # waits until a key is pressed
     # cv2.destroyAllWindows() # destroys the window showing image
     
     return img, uni_hulls

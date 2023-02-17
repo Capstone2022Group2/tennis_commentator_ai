@@ -10,22 +10,30 @@ def detect_bounces(boxes, prev_frame_data, frame_num, event_det_model):
   labels, coord = boxes
   i = 0
   bounce = False
+  highest_conf = 0
+  i_value = -1
+
+  if 0 not in labels: 
+    return [], bounce
+    
   for label in labels:
     # only care about checking the ball
     if label == 0:
-      if len(prev_frame_data) > 0:
-       
-        event_data = np.concatenate([[frame_num], coord[i][:-1], prev_frame_data])
-        results = event_det_model.predict(event_data.reshape(1, -1))
-        print(results)
-        if results[0] == 1:
-                print('bounce')
-                bounce = True
-                #cv2.imwrite(f'no_commit/event_debug/frame{count}.jpg', image)
-    
-      # remove confidence value from coord array
-      return coord[i][:-1], bounce
-      
+      if coord[i][4] > highest_conf:
+        highest_conf = coord[i][4]
+        i_value = i
     i += 1
+  if len(prev_frame_data) > 0:
+    
+    event_data = np.concatenate([coord[i_value][:-1], prev_frame_data])
+    results = event_det_model.predict(event_data.reshape(1, -1))
+    print(results)
+    if results[0] == 1:
+      print('bounce')
+      bounce = True
+      #cv2.imwrite(f'no_commit/event_debug/frame{count}.jpg', image)
+      # remove confidence value from coord array
+  
+  return coord[i_value][:-1], bounce
 
-  return [], bounce
+  

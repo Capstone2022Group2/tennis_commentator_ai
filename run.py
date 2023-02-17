@@ -10,18 +10,20 @@ import ai_models.event_detector.event as event_mod
 import os
 
 obj_det_model = torch.hub.load('ultralytics/yolov5', 'custom', 'ai_models/object_detection/trained/object_detect5.pt')  # custom trained model
+obj_det_model.conf = 0.40
 event_det_model = event_mod.load_model()
 
 # Images
 
 ################TEST#######################################
-# url = 'no_commit/test_images/frame943.jpg'  # or file, Path, URL, PIL, OpenCV, numpy, list
+# url = 'no_commit/debug_img.jpg'  # or file, Path, URL, PIL, OpenCV, numpy, list
 # results = obj_det_model (url)
 # det = results.xyxy[0]
 # print(det)
-# img = cv2.imread(url) 
-# my_img = checkIfBallInBounds(det, img)
-# cv2.imshow('rect', my_img) 
+# img = cv2.imread(url)
+# image, boundaries = get_court_boundary(det, img, show_data=True)
+# # my_img = checkIfBallInBounds(det, img)
+# #cv2.imshow('rect', my_img) 
 # cv2.waitKey(0) # waits until a key is pressed
 
 
@@ -35,17 +37,19 @@ event_det_model = event_mod.load_model()
 # --------------------------------------------------------
 
 #----Detect using downloaded video----
-player = cv2.VideoCapture('no_commit/short_test.mp4')
+player = cv2.VideoCapture('no_commit/single_rally.mp4')
 success,image = player.read()
 height, width, layers = image.shape
 size = (width, height)
 # ----------------------------------------------------------
 
-out = cv2.VideoWriter('no_commit/results_fixed.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
+out = cv2.VideoWriter('no_commit/demo.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
 
 prev_frame_data = []
+prev_det = []
 count = 0
 display_bounce = -1
+in_bounds = False
 while success:
   start_time = time()
   print(f"detecting frame: ${count}")
@@ -60,18 +64,19 @@ while success:
   # doing this every frame for debug purpose
   det = det_objects.xyxy[0]
   image, boundaries = get_court_boundary(det, image, show_data=True)
-  image, ball_in_bounds = checkIfBallInBounds(det, image, boundaries, show_data=True)
+  image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
 
   if bounce_detected:
     display_bounce = 0
+    in_bounds = ball_in_bounds
     #detect if ball is in bounds and draw court boundary
-    det = det_objects.xyxy[0]
+    #det = det_objects.xyxy[0]
     #image, ball_in_bounds = checkIfBallInBounds(det, image, show_data=False)
     
 
   ### DEBUG ###
   if display_bounce <= 5 and display_bounce >=0:
-    in_bounds = ball_in_bounds
+    
     cv2.putText(image,'bounce', 
             (280,100), 
             cv2.FONT_HERSHEY_SIMPLEX, 
@@ -97,6 +102,7 @@ while success:
   out.write(image)
   #out.write(objects_frame)
   count +=1
+  prev_det = det
   
   success,image = player.read()
 
