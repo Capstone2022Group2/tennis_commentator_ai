@@ -1,9 +1,0 @@
-# For use with YOLOv5  
-
-# path to training and validation images
-train: ../train/images
-val: ../valid/images
-
-# number and names of classes to detect
-nc: 4
-names: ['ball', 'court', 'net', 'player']

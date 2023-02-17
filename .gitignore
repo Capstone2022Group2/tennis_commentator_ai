@@ -6,3 +6,11 @@ lib
 Include
 Scripts
 .idea
+*.txt
+*.mp4
+*.mov
+!*dataset.txt
+# pychache
+**/__pycache__
+yolov5/runs
+venv

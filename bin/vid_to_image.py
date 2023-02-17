@@ -5,6 +5,7 @@
 
 # to run: python bin/vid_to_image.py -v <video_title> -f <frame_to_capture> (eg: -f 100 means save every 100th frame) -d <directory_to_place_images>
 
+
 import cv2
 import sys
 import getopt
@@ -47,7 +48,10 @@ while success:
   
   if(count % frame_to_capture == 0):
     img += 1
-    cv2.imwrite(f'{target_dir}/frame{img}.jpg', image)     # save frame as JPEG file 
+    cv2.imshow('frame', image)
+    k = cv2.waitKey(0) # waits until a key is pressed
+    if k == ord('s'):
+      cv2.imwrite(f'{target_dir}/frame{img}.jpg', image)     # save frame as JPEG file 
   
   success,image = vidcap.read()
   count = (count + 1) % frame_to_capture
