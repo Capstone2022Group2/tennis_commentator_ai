@@ -1,12 +1,12 @@
 import cv2
-import ai_models.event_detector.event as event_mod
+#import ai_models.event_detector.event as event_mod
 import numpy as np
 
 '''
 detects if a bounce occurred using data from prev frame and current frame
 returns the current frame's data, and if a bounce was detected
 '''
-def detect_bounces(boxes, prev_frame_data, frame_num, event_det_model):
+def detect_bounces(boxes, first_ball_data, prev_ball_data, frame_num, event_det_model):
   labels, coord = boxes
   i = 0
   bounce = False
@@ -23,9 +23,9 @@ def detect_bounces(boxes, prev_frame_data, frame_num, event_det_model):
         highest_conf = coord[i][4]
         i_value = i
     i += 1
-  if len(prev_frame_data) > 0:
+  if len(prev_ball_data) > 0 and len(first_ball_data) > 0:
     
-    event_data = np.concatenate([coord[i_value][:-1], prev_frame_data])
+    event_data = np.concatenate([coord[i_value][:-1], prev_ball_data, first_ball_data])
     results = event_det_model.predict(event_data.reshape(1, -1))
     print(results)
     if results[0] == 1:

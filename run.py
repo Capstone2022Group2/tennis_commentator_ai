@@ -11,7 +11,7 @@ import os
 
 obj_det_model = torch.hub.load('ultralytics/yolov5', 'custom', 'ai_models/object_detection/trained/object_detect5.pt')  # custom trained model
 obj_det_model.conf = 0.40
-event_det_model = event_mod.load_model()
+event_det_model = event_mod.load_model('ai_models/event_detector/trained_model')
 
 # Images
 
@@ -37,16 +37,19 @@ event_det_model = event_mod.load_model()
 # --------------------------------------------------------
 
 #----Detect using downloaded video----
-player = cv2.VideoCapture('no_commit/single_rally.mp4')
+player = cv2.VideoCapture('no_commit/short_test.mp4')
 success,image = player.read()
 height, width, layers = image.shape
 size = (width, height)
 # ----------------------------------------------------------
 
-out = cv2.VideoWriter('no_commit/demo.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
+out = cv2.VideoWriter('no_commit/demo_test.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
 
-prev_frame_data = []
+first_ball_data = []
+prev_ball_data = []
+curr_ball_data=[]
 prev_det = []
+
 count = 0
 display_bounce = -1
 in_bounds = False
@@ -59,7 +62,12 @@ while success:
   # plot object detection boxes
   boxes = det_objects.xyxyn[0][:, -1].numpy(), det_objects.xyxyn[0][:, :-1].numpy()
   #objects_frame = plot_boxes(object_det_model, boxes, image)
-  prev_frame_data, bounce_detected = detect_bounces(boxes, prev_frame_data, count, event_det_model)
+  curr_ball_data, bounce_detected = detect_bounces(boxes,first_ball_data, prev_ball_data, count, event_det_model)
+  if len(curr_ball_data) > 0:
+    draw_box(image, curr_ball_data, (0, 255, 0))
+  first_ball_data = prev_ball_data.copy()
+  prev_ball_data = curr_ball_data.copy()
+
 
   # doing this every frame for debug purpose
   det = det_objects.xyxy[0]
