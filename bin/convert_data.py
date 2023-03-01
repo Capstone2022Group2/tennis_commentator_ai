@@ -29,12 +29,12 @@ with open('no_commit/annotations/3_frame/data.txt', "r") as file:
                     del tokens[-1]
                     del tokens[0]
 
-                    # if annotations[i] == 'hit':
-                    #     tokens = np.concatenate([tokens, [1,0]])
-                    # elif annotations[i] == 'bounce':
-                    #     tokens = np.concatenate([tokens, [0,1]])
-                    # else:
-                    #     tokens = np.concatenate([tokens, [0,0]])
+                    if annotations[i] == 'hit':
+                        tokens = np.concatenate([tokens, [1,0]])
+                    elif annotations[i] == 'bounce':
+                        tokens = np.concatenate([tokens, [0,1]])
+                    else:
+                        tokens = np.concatenate([tokens, [0,0]])
                     # if annotations[i] == 'hit':
                     #     tokens = np.concatenate([tokens, [2]])
                     # elif annotations[i] == 'bounce':
@@ -42,12 +42,12 @@ with open('no_commit/annotations/3_frame/data.txt', "r") as file:
                     # else:
                     #     tokens = np.concatenate([tokens, [0]])
 
-                    if annotations[i] == 'hit':
-                        tokens = np.concatenate([tokens, [1]])
-                    elif annotations[i] == 'bounce':
-                        tokens = np.concatenate([tokens, [1]])
-                    else:
-                        tokens = np.concatenate([tokens, [0]])
+                    # if annotations[i] == 'hit':
+                    #     tokens = np.concatenate([tokens, [1]])
+                    # elif annotations[i] == 'bounce':
+                    #     tokens = np.concatenate([tokens, [1]])
+                    # else:
+                    #     tokens = np.concatenate([tokens, [0]])
 
                     # tokens = [token for token in tokens]
                     output[i] = tokens

@@ -2,9 +2,11 @@ import torch
 import cv2
 import pafy
 from time import time
-from event_detection.point_detection import *
+from event_detection.check_ball_in_bounds import *
 from event_detection.bounce_detection import *
 from event_detection.court_detection import *
+from event_detection.get_side_of_court import *
+from event_detection.point_detector import PointDetector
 from helper_functions.cv_helper import plot_boxes
 import ai_models.event_detector.event as event_mod
 import os
@@ -18,12 +20,22 @@ event_det_model = event_mod.load_model('ai_models/event_detector/trained_model')
 ################TEST#######################################
 # url = 'no_commit/debug_img.jpg'  # or file, Path, URL, PIL, OpenCV, numpy, list
 # results = obj_det_model (url)
-# det = results.xyxy[0]
-# print(det)
+# #det = results.xyxy[0]
+# # print(det)
 # img = cv2.imread(url)
-# image, boundaries = get_court_boundary(det, img, show_data=True)
+# labels, coord = results.xyxyn[0][:, -1].numpy(), results.xyxyn[0][:, :-1].numpy()
+# n = len(labels)
+# x_shape, y_shape = img.shape[1], img.shape[0]
+# for i in range(n):
+#   if labels[i] == 2:
+#     row = coord[i]
+#     x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
+#     bgr = (0, 255, 0)
+#     cv2.line(img, (x1, y2), (x2, y2), bgr, 2)
+
+# #image, boundaries = get_court_boundary(det, img, show_data=True)
 # # my_img = checkIfBallInBounds(det, img)
-# #cv2.imshow('rect', my_img) 
+# cv2.imshow('rect', img) 
 # cv2.waitKey(0) # waits until a key is pressed
 
 
@@ -52,7 +64,11 @@ prev_det = []
 
 count = 0
 display_bounce = -1
-in_bounds = False
+display_point = -1
+bounce_text = ''
+bounce_count = 0
+
+point_detector = PointDetector()
 while success:
   start_time = time()
   print(f"detecting frame: ${count}")
@@ -63,23 +79,51 @@ while success:
   boxes = det_objects.xyxyn[0][:, -1].numpy(), det_objects.xyxyn[0][:, :-1].numpy()
   #objects_frame = plot_boxes(object_det_model, boxes, image)
   curr_ball_data, bounce_detected = detect_bounces(boxes,first_ball_data, prev_ball_data, count, event_det_model)
-  if len(curr_ball_data) > 0:
-    draw_box(image, curr_ball_data, (0, 255, 0))
-  first_ball_data = prev_ball_data.copy()
-  prev_ball_data = curr_ball_data.copy()
-
-
+  # if len(curr_ball_data) > 0 and len(prev_ball_data) > 0 and len(first_ball_data) > 0:
+  #   draw_box(image, curr_ball_data, (0, 255, 0))
+  #   draw_box(image, prev_ball_data, (0, 255, 255))
+  #   draw_box(image, first_ball_data, (0, 0, 255))
+  
   # doing this every frame for debug purpose
   det = det_objects.xyxy[0]
-  image, boundaries = get_court_boundary(det, image, show_data=True)
-  image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+  # image, boundaries = get_court_boundary(det, image, show_data=True)
+  # image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
 
-  if bounce_detected:
+  if bounce_detected and point_detector.buffer < 0:
+    unscaled_det = det_objects.xyxyn[0]
+    
+    side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
+    if point_detector.prev_bounce_in_bounds:
+      #side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
+      if point_detector.side_of_court * side_of_court > 0:
+        point_detector.reset()
+        display_point = 0
+        #TODO: figure out who scored the point
+
+    image, boundaries = get_court_boundary(prev_det, image, show_data=False)
+    point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+    point_detector.side_of_court = side_of_court
+
+
+    #TODO: give a point if the current bounce is out of bounds
+    
+    #   else:
+    #     image, boundaries = get_court_boundary(prev_det, image, show_data=False)
+    #     point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+    #     point_detector.side_of_court = side_of_court
+    # else:
+    #   image, boundaries = get_court_boundary(prev_det, image, show_data=False)
+    #   point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+    #   point_detector.side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
+
+    # det = det_objects.xyxy[0]
+    # image, boundaries = get_court_boundary(det, image, show_data=True)
+    # image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
     display_bounce = 0
-    in_bounds = ball_in_bounds
-    #detect if ball is in bounds and draw court boundary
-    #det = det_objects.xyxy[0]
-    #image, ball_in_bounds = checkIfBallInBounds(det, image, show_data=False)
+    in_bounds = point_detector.prev_bounce_in_bounds
+    bounce_text = 'in bounds' if in_bounds else 'not in bounds'
+    bounce_count += 1
+    point_detector.buffer = 0
     
 
   ### DEBUG ###
@@ -93,8 +137,8 @@ while success:
             5,
             3)
     
-    text = 'in bounds' if in_bounds else 'not in bounds'
-    cv2.putText(image, text, 
+    #bounce_text = 'in bounds' if in_bounds else 'not in bounds'
+    cv2.putText(image, bounce_text, 
             (550,100), 
             cv2.FONT_HERSHEY_SIMPLEX, 
             2,
@@ -105,12 +149,41 @@ while success:
   else:
     display_bounce = -1
 
+  if display_point <= 5 and display_point >=0:
+    
+    cv2.putText(image,'point', 
+            (280,150), 
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            2,
+            (0,0, 255),
+            5,
+            3)
+    
+    display_point += 1
+  else:
+    display_point = -1
 
+
+  cv2.putText(image,str(bounce_count), 
+            (480,150), 
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            2,
+            (0,0, 255),
+            5,
+            3)
   # add frames to the output video
   out.write(image)
   #out.write(objects_frame)
   count +=1
   prev_det = det
+
+  point_detector.buffer = point_detector.buffer + 1 if point_detector.buffer < 6 else -1
+  # point_detector.buffer += 1
+  # if point_detector.buffer > 6:
+  #   point_detector.buffer = -1
+
+  first_ball_data = prev_ball_data.copy()
+  prev_ball_data = curr_ball_data.copy()
   
   success,image = player.read()
 

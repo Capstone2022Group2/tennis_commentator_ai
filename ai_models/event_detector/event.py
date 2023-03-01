@@ -9,11 +9,11 @@ import joblib
 from scipy.stats import randint
 #import compile_data
 
-model_name = 'event_model_old.joblib'
+model_name = 'event_model_3_frame.joblib'
 
 # Gets the data with which to build and/or test a new model no_commit/annotations/full_annotations
 def get_data():
-    data = pd.read_fwf(os.path.join('no_commit/annotations/3_frame', 'dataset3.txt'))
+    data = pd.read_fwf(os.path.join('no_commit/annotations/3_frame', 'dataset2.txt'))
     #data = pd.read_fwf(os.path.join('ai_models/event_detector/dataset', 'dataset.txt'))
 
     # prep data
@@ -39,8 +39,8 @@ def build_model(path):
         os.remove(os.path.join(path, model_name ))
     
     x_train, x_test, y_train, y_test = get_data()
-    #rf = RandomForestClassifier(max_depth=12, n_estimators=140, random_state=27)
-    rf = RandomForestClassifier(max_depth=19, n_estimators=336, random_state=41)
+    rf = RandomForestClassifier(max_depth=16, n_estimators=155, random_state=9)
+    #rf = RandomForestClassifier(max_depth=19, n_estimators=336, random_state=41)
 
     rf.fit(x_train, y_train)
     joblib.dump(rf, os.path.join(path, model_name ))
@@ -97,9 +97,9 @@ def tune_hyperparameters():
 
 if (__name__ == "__main__"):
     # path = 'trained_model'
-    #build_model('ai_models/event_detector/trained_model')
-    tune_hyperparameters()
-    #print_test_matrix('ai_models/event_detector/trained_model')
+    build_model('ai_models/event_detector/trained_model')
+    #tune_hyperparameters()
+    print_test_matrix('ai_models/event_detector/trained_model')
     #get_data()
 
 # TODO: Investigate data augmentation for the model
