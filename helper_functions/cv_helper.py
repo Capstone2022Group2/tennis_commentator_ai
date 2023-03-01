@@ -67,3 +67,4 @@ def draw_box(image, data, bgr):
   x1, y1, x2, y2 = int(data[0]*x_shape), int(data[1]*y_shape), int(data[2]*x_shape), int(data[3]*y_shape)
   cv2.rectangle(image, (x1, y1), (x2, y2), bgr, 1)
   return image
+  

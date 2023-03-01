@@ -18,18 +18,13 @@ def get_data():
 
     # prep data
     columns = len(data.columns)
-    #hitColumnsKey = str(columns - 2)
     bounceColumnsKey = str(columns - 1)
     hitColumnsKey = str(columns - 2)
-    # bounceColumnsKey = str(columns - 1)
-    #labels = data[[hitColumnsKey, bounceColumnsKey]]
-    #labels = [int(label) for label in labels]
     bounce = data[bounceColumnsKey]
-    #bounce = [int(b) for b in bounce]
-    #print(data[hitColumnsKey])
+
     x = data.drop(bounceColumnsKey, axis=1).drop(hitColumnsKey, axis=1)
     x.reset_index()
-    #print(x)
+
     x_train, x_test, y_train, y_test = train_test_split(x, bounce, test_size=0.2, random_state=100)
     return (x_train, x_test, y_train, y_test)
 
@@ -39,7 +34,6 @@ def build_model(path):
         os.remove(os.path.join(path, model_name ))
     
     x_train, x_test, y_train, y_test = get_data()
-    #rf = RandomForestClassifier(max_depth=12, n_estimators=140, random_state=27)
     rf = RandomForestClassifier(max_depth=19, n_estimators=336, random_state=41)
 
     rf.fit(x_train, y_train)
@@ -71,7 +65,7 @@ def predict_from_dataframe(data, path):
 def predict_from_dict(data, path):
     return predict_from_dataframe(compile_data.compile(data, path))
 
-
+# check random values of hyperparameters and see which perform the best
 def tune_hyperparameters():
     x_train, x_test, y_train, y_test = get_data()
     param_dist = {'n_estimators': randint(50,500),
@@ -89,8 +83,6 @@ def tune_hyperparameters():
 
     # Fit the random search object to the data
     rand_search.fit(x_train, y_train)
-
-    # best_rf = rand_search.best_estimator_
 
     # Print the best hyperparameters
     print('Best hyperparameters:',  rand_search.best_params_)

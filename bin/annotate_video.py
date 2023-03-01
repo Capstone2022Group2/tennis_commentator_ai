@@ -74,6 +74,8 @@ while success:
     
     det_objects = obj_det_model(image)
     labels, coord = det_objects.xyxyn[0][:, -1].numpy(), det_objects.xyxyn[0][:, :-1].numpy()
+
+    # if no ball detected, don't annotate the frame
     if 0 not in labels:
         print('no ball')
         first_frame_data = prev_frame_data.copy()
@@ -81,6 +83,7 @@ while success:
         success,image = vidcap.read()
         continue
     else:
+        # find the ball with the highests confidence value
         i = 0
         highest_conf = 0
         i_value = -1
@@ -91,10 +94,12 @@ while success:
                   highest_conf = coord[i][4]
                   i_value = i
             i += 1
+        # only allow annotation if there is ball data for 3 consecutive frames
         if len(prev_frame_data) > 0 and len(first_frame_data) > 0:
             print('ball')
             print(coord[i_value][4])
 
+            # draw where the model thinks the balls are to avoid annotating false positives
             draw_box(image, coord[i_value], (0, 255, 0))
             draw_box(image, prev_frame_data, (0, 255, 255))
             draw_box(image, first_frame_data, (0, 0, 255))
@@ -107,13 +112,14 @@ while success:
             prev_frame_data = curr_frame_data.copy()
             
         else:
-            # remove confidence value from coord array
+            # if there is missing data from previous frames, don't annotate and save current data
             print('no previus data')
             first_frame_data = prev_frame_data.copy()
+            # remove confidence value from coord array
             prev_frame_data = coord[i_value][:-1]
             skip = True
                    
-        
+    # commands on what to do with each frame
     if not skip:
         cv2.imshow('frame', image)
         k = cv2.waitKey(0) # waits until a key is pressed

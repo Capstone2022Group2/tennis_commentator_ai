@@ -17,12 +17,14 @@ def detect_bounces(boxes, first_ball_data, prev_ball_data, frame_num, event_det_
     return [], bounce
     
   for label in labels:
-    # only care about checking the ball
+    # only care about checking ball with highest confidence
     if label == 0:
       if coord[i][4] > highest_conf:
         highest_conf = coord[i][4]
         i_value = i
     i += 1
+
+  # only detect bounces if there are 3 consecutive frames of ball data
   if len(prev_ball_data) > 0 and len(first_ball_data) > 0:
     
     event_data = np.concatenate([coord[i_value][:-1], prev_ball_data, first_ball_data])
@@ -31,9 +33,6 @@ def detect_bounces(boxes, first_ball_data, prev_ball_data, frame_num, event_det_
     if results[0] == 1:
       print('bounce')
       bounce = True
-      #cv2.imwrite(f'no_commit/event_debug/frame{count}.jpg', image)
-      # remove confidence value from coord array
-  
+      
+  # remove confidence value from coord array
   return coord[i_value][:-1], bounce
-
-  
