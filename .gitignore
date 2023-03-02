@@ -5,7 +5,7 @@
 lib
 Include
 Scripts
-*.txt
+#*.txt
 *.mp4
 *.mov
 !*dataset.txt

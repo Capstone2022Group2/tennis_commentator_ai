@@ -16,7 +16,7 @@ def draw_box(image, data, bgr):
   return image
 
 obj_det_model = torch.hub.load('ultralytics/yolov5', 'custom', 'ai_models/object_detection/trained/object_detect5.pt')  # custom trained model
-obj_det_model.conf = 0.4
+obj_det_model.conf = 0.2
 
 start_frame = 0
 end_frame = 0
@@ -95,9 +95,10 @@ while success:
             print('ball')
             print(coord[i_value][4])
 
-            draw_box(image, coord[i_value], (0, 255, 0))
-            draw_box(image, prev_frame_data, (0, 255, 255))
             draw_box(image, first_frame_data, (0, 0, 255))
+            draw_box(image, prev_frame_data, (0, 255, 255))
+            draw_box(image, coord[i_value], (0, 255, 0))
+            
             curr_frame_data = coord[i_value][:-1]
             event_data = np.concatenate([[frame], curr_frame_data, prev_frame_data, first_frame_data])
             event_data = [str(i) + ' ' for i in event_data]
