@@ -24,7 +24,7 @@ def main():
         freqs_norm = np.divide(freqs, freqs.max())
         timestamp = count * STEP_SIZE / audio_file.fps
         prediction = aud.predict(freqs_norm, model)
-        if prediction == 'HIT':
+        if prediction[0] > 0.5:
             hits.append(timestamp)
 
         count += 1
@@ -35,8 +35,7 @@ def main():
     clips = [video]
     for hit in hits:
         clip = TextClip('HIT', fontsize=40, color='white')
-        clip = clip.set_start(hit).set_position('center').set_duration(0.1)
-        clip.set_position('center')
+        clip = clip.set_start(hit).set_position((10, 10)).set_duration(0.1)
         clips.append(clip)
 
     final = CompositeVideoClip(clips)
