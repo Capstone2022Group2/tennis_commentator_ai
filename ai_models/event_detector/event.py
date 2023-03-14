@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
 import joblib
-import compile_data
+from .compile_data import *
 
 # Gets the data with which to build and/or test a new model
 def get_data():
