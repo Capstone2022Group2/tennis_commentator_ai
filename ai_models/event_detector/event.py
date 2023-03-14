@@ -8,6 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 import joblib
 from scipy.stats import randint
 #import compile_data
+from .compile_data import *
 
 model_name = 'event_model_3_frame.joblib'
 

@@ -1,18 +1,26 @@
+import math
+
 import torch
 import cv2
-import pafy
 from time import time
 from event_detection.check_ball_in_bounds import *
+
+from moviepy.audio.io.AudioFileClip import AudioFileClip
+from moviepy.video.io.VideoFileClip import VideoFileClip
+
+from ai_models.audio_detector import audio_utils
+from event_detection.point_detection import *
 from event_detection.bounce_detection import *
 from event_detection.court_detection import *
 from event_detection.get_side_of_court import *
 from event_detection.point_detector import PointDetector
 from helper_functions.cv_helper import plot_boxes
 import ai_models.event_detector.event as event_mod
+import tensorflow as tf
 import os
 
 obj_det_model = torch.hub.load('ultralytics/yolov5', 'custom', 'ai_models/object_detection/trained/object_detect5.pt')  # custom trained model
-obj_det_model.conf = 0.40
+obj_det_model.conf = 0.20
 event_det_model = event_mod.load_model('ai_models/event_detector/trained_model')
 
 # Images
@@ -61,6 +69,12 @@ first_ball_data = []
 prev_ball_data = []
 curr_ball_data=[]
 prev_det = []
+out = cv2.VideoWriter('no_commit/results_fixed.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
+video_file = VideoFileClip('no_commit/short_test.mp4')
+audio_file = video_file.audio
+audio_reader = audio_file.coreader().reader
+audio_reader.seek(0)
+audio_model = tf.keras.models.load_model('ai_models/audio_detector/trained_model', compile=False)
 
 count = 0
 display_bounce = -1
@@ -69,9 +83,16 @@ bounce_text = ''
 bounce_count = 0
 
 point_detector = PointDetector()
+display_hit = -1
 while success:
   start_time = time()
   print(f"detecting frame: ${count}")
+
+  frame_num = math.floor(count * audio_file.fps / video_file.fps)
+  audio = audio_utils.get_audio(audio_reader)
+  hit_detected = audio_utils.predict(audio, audio_model)[0] > 0.5
+  if hit_detected:
+      display_hit = 0
 
   det_objects = obj_det_model(image)
 
@@ -162,6 +183,11 @@ while success:
     display_point += 1
   else:
     display_point = -1
+  if (display_hit <= 5 and display_hit >=0):
+      cv2.putText(image, "HIT", (550, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 255), 5, 3)
+      display_hit += 1
+  else:
+      display_hit = -1
 
 
   cv2.putText(image,str(bounce_count), 

@@ -6,9 +6,12 @@ lib
 Include
 Scripts
 #*.txt
+.idea
 *.mp4
 *.mov
 !*dataset.txt
 # pychache
 **/__pycache__
 yolov5/runs
+venv
+audio_training.csv
