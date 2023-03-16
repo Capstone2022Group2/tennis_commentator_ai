@@ -75,7 +75,7 @@ def get_court_boundary(det, imo, show_data=False):
         reshape = cropped_image.reshape((cropped_image.shape[0] * cropped_image.shape[1], 3))
 
         # Find and display most dominant colors in the cropped image using kmeans cluster
-        cluster = KMeans(n_clusters=5).fit(reshape)
+        cluster = KMeans(n_clusters=4).fit(reshape)
 
         labels = np.arange(0, len(np.unique(cluster.labels_)) + 1)
         (hist, _) = np.histogram(cluster.labels_, bins = labels)
@@ -87,12 +87,12 @@ def get_court_boundary(det, imo, show_data=False):
 
         # get range of hsv colors for the two most dominant colors in the cropped image
         hsv_color1, hsv_color2 = getHSVColorRange(colors[len(colors)-1][1])
-        hsv_color3, hsv_color4 = getHSVColorRange(colors[len(colors)-2][1])
+        #hsv_color3, hsv_color4 = getHSVColorRange(colors[len(colors)-2][1])
 
         # create a black and white mask that only highlights the part of the image within the color ranges
         mask = cv2.inRange(img_hsv, hsv_color1, hsv_color2)
-        mask2 = cv2.inRange(img_hsv, hsv_color3, hsv_color4)
-        resMask = mask | mask2
+        #mask2 = cv2.inRange(img_hsv, hsv_color3, hsv_color4)
+        resMask = mask #| mask2
         #cv2.imshow('res mask', resMask)
 
         # arbitrarily choosing small rectangle structuring element to widen the gap between lines of the court

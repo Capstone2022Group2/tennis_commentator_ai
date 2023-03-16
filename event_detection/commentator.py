@@ -16,6 +16,7 @@ class Commentator:
     line_type = 3
 
     current_commentary = ''
+    default = 'Fantastic shot by the player! That was a great display of agility, quick reflexes, and excellent technique. Both players are clearly showing their exceptional skills, and we can expect an exciting match today!'
 
     def __init__(self):
         load_dotenv()
@@ -39,6 +40,7 @@ class Commentator:
             print(self.current_commentary)
         except Exception as e:
             print(e)
+            self.current_commentary = self.default
         
         
     # TODO format this text nicely on screen
