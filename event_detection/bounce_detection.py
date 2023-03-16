@@ -28,11 +28,17 @@ def detect_bounces(boxes, first_ball_data, prev_ball_data, frame_num, event_det_
     event_data = np.concatenate([coord[i_value][:-1], prev_ball_data, first_ball_data])
     results = event_det_model.predict(event_data.reshape(1, -1))
     print(results)
+    # for neural network
+    # if results[0][1] > results[0][0] and results[0][1] > results[0][2]:
+    #   print('bounce')
+    #   bounce = True
+
+    # for decision tree
     if results[0] == 1:
       print('bounce')
       bounce = True
-      #cv2.imwrite(f'no_commit/event_debug/frame{count}.jpg', image)
-      # remove confidence value from coord array
+    #   #cv2.imwrite(f'no_commit/event_debug/frame{count}.jpg', image)
+    #   # remove confidence value from coord array
   
   return coord[i_value][:-1], bounce
 

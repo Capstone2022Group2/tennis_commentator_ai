@@ -9,11 +9,12 @@ from moviepy.audio.io.AudioFileClip import AudioFileClip
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from ai_models.audio_detector import audio_utils
-from event_detection.point_detection import *
+#from event_detection.point_detection import *
 from event_detection.bounce_detection import *
 from event_detection.court_detection import *
-from event_detection.get_side_of_court import *
+#from event_detection.get_side_of_court import *
 from event_detection.point_detector import PointDetector
+from event_detection.commentator import Commentator
 from helper_functions.cv_helper import plot_boxes
 import ai_models.event_detector.event as event_mod
 import tensorflow as tf
@@ -63,13 +64,13 @@ height, width, layers = image.shape
 size = (width, height)
 # ----------------------------------------------------------
 
-out = cv2.VideoWriter('no_commit/demo_test.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
+out = cv2.VideoWriter('no_commit/demo_test2.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
 
 first_ball_data = []
 prev_ball_data = []
 curr_ball_data=[]
 prev_det = []
-out = cv2.VideoWriter('no_commit/results_fixed.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
+#out = cv2.VideoWriter('no_commit/results_fixed.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
 video_file = VideoFileClip('no_commit/short_test.mp4')
 audio_file = video_file.audio
 audio_reader = audio_file.coreader().reader
@@ -84,6 +85,9 @@ bounce_count = 0
 
 point_detector = PointDetector()
 display_hit = -1
+commentator = Commentator()
+
+first_bounce = True
 while success:
   start_time = time()
   print(f"detecting frame: ${count}")
@@ -110,20 +114,32 @@ while success:
   # image, boundaries = get_court_boundary(det, image, show_data=True)
   # image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
 
+  # TODO change this to happen on first hit
   if bounce_detected and point_detector.buffer < 0:
+    # temporary until hit detection is implemented
+    if first_bounce:
+      commentator.get_commentary('serve')
+      first_bounce = False
+
     unscaled_det = det_objects.xyxyn[0]
     
     side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
     if point_detector.prev_bounce_in_bounds:
       #side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
+
+      # point was scored
       if point_detector.side_of_court * side_of_court > 0:
         point_detector.reset()
+        point_detector.points += 1
         display_point = 0
-        #TODO: figure out who scored the point
+        commentator.get_commentary('point')
 
-    image, boundaries = get_court_boundary(prev_det, image, show_data=False)
-    point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
-    point_detector.side_of_court = side_of_court
+    else:
+      image, boundaries = get_court_boundary(prev_det, image, show_data=False)
+      point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+      point_detector.side_of_court = side_of_court
+        
+        #TODO: figure out who scored the point
 
 
     #TODO: give a point if the current bounce is out of bounds
@@ -170,16 +186,8 @@ while success:
   else:
     display_bounce = -1
 
-  if display_point <= 5 and display_point >=0:
-    
-    cv2.putText(image,'point', 
-            (280,150), 
-            cv2.FONT_HERSHEY_SIMPLEX, 
-            2,
-            (0,0, 255),
-            5,
-            3)
-    
+  if display_point <= 20 and display_point >=0:
+    commentator.display_commentary(image)
     display_point += 1
   else:
     display_point = -1
@@ -189,13 +197,20 @@ while success:
   else:
       display_hit = -1
 
+  cv2.putText(image,f'points: {point_detector.points}', 
+          (50,150), 
+          cv2.FONT_HERSHEY_SIMPLEX, 
+          2,
+          (0,0, 255),
+          4,
+          3)
 
   cv2.putText(image,str(bounce_count), 
-            (480,150), 
+            (80,680), 
             cv2.FONT_HERSHEY_SIMPLEX, 
             2,
             (0,0, 255),
-            5,
+            3,
             3)
   # add frames to the output video
   out.write(image)
@@ -204,9 +219,6 @@ while success:
   prev_det = det
 
   point_detector.buffer = point_detector.buffer + 1 if point_detector.buffer < 6 else -1
-  # point_detector.buffer += 1
-  # if point_detector.buffer > 6:
-  #   point_detector.buffer = -1
 
   first_ball_data = prev_ball_data.copy()
   prev_ball_data = curr_ball_data.copy()
