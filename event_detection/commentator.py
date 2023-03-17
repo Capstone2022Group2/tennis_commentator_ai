@@ -14,6 +14,7 @@ class Commentator:
     text_thickness = 3
     text_color = (255,255, 255)
     line_type = 3
+    commentary_frames = -1
 
     current_commentary = ''
     default = 'Fantastic shot by the player! That was a great display of agility, quick reflexes, and excellent technique. Both players are clearly showing their exceptional skills, and we can expect an exciting match today!'
@@ -24,8 +25,11 @@ class Commentator:
         self.events = {'point': 'A player has just scored a point. Keep it generic', 
                        'serve': 'A player has just served the ball'}
 
-    def get_commentary(self, event):
+    def set_commentary(self, event):
         
+        # start displaying commentary
+        self.commentary_frames = 0
+
         # The system parameter sets up the chat agent and gives it context for the conversation
         # user parameter is is a prompt from the user to the chat agent
         try:
@@ -45,10 +49,16 @@ class Commentator:
         
     # TODO format this text nicely on screen
     def display_commentary(self, image):
-        cv2.putText(image, self.current_commentary, 
-          self.text_location, 
-          cv2.FONT_HERSHEY_SIMPLEX, 
-          self.font_scale,
-          self.text_color,
-          self.text_thickness,
-          self.line_type)
+
+        if self.commentary_frames <= 30 and self.commentary_frames >=0:
+            cv2.putText(image, self.current_commentary, 
+            self.text_location, 
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            self.font_scale,
+            self.text_color,
+            self.text_thickness,
+            self.line_type)
+            self.commentary_frames += 1
+        else:
+            self.commentary_frames = -1
+        

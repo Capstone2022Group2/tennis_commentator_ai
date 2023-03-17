@@ -42,44 +42,44 @@ returns the current frame's data, and if a bounce was detected
   
 #   return coord[i_value][:-1], bounce
 
-def check_if_ball_inside_player(boxes, ball):
-  labels, coord = boxes
-  players = []
-  i = 0
+# def check_if_ball_inside_player(boxes, ball):
+#   labels, coord = boxes
+#   players = []
+#   i = 0
 
-  if 0 in labels: 
-    for label in labels:
-      # find all players
-      if label == 3:
-        players.append(coord[i])
-      i += 1
+#   if 0 in labels: 
+#     for label in labels:
+#       # find all players
+#       if label == 3:
+#         players.append(coord[i])
+#       i += 1
   
-  bx = ball[0]
-  by = ball[1]
-  bw = ball[2] - bx
-  bh = ball[3] - by
+#   bx = ball[0]
+#   by = ball[1]
+#   bw = ball[2] - bx
+#   bh = ball[3] - by
 
-  for player in players:
-    x = player[0]
-    y = player[1]
-    w = player[2] - x
-    h = player[3] - y
+#   for player in players:
+#     x = player[0]
+#     y = player[1]
+#     w = player[2] - x
+#     h = player[3] - y
 
-    if x < bx and y < by:
-    # If bottom-right inner box corner is inside the bounding box
-      if bx + bw < x + w and by + bh < y + h:
-          return True
+#     if x < bx and y < by:
+#     # If bottom-right inner box corner is inside the bounding box
+#       if bx + bw < x + w and by + bh < y + h:
+#           return True
   
-  return False
+#   return False
       
 
-def get_area(box):
-  x = box[0]
-  y = box[1]
-  w = box[2] - x
-  h = box[3] - y
+# def get_area(box):
+#   x = box[0]
+#   y = box[1]
+#   w = box[2] - x
+#   h = box[3] - y
   
-  return w * h
+#   return w * h
 
 def get_center(box):
     x = box[0]
@@ -117,7 +117,7 @@ def detect_bounces(boxes, first_ball_data, prev_ball_data, frame_num, event_det_
     first_center = get_center(first_ball_data)
     prev_center = get_center(prev_ball_data)
     curr_center = get_center(curr_ball_data)
-    
+
     # TODO maybe add a scaling factor to only detect larger v shapes
     if prev_center[1] > first_center[1] and prev_center[1] > curr_center[1]:
       bounce = True
