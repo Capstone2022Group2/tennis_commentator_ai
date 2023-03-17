@@ -137,10 +137,6 @@ while success:
 
   # keep track of how many frames in a row the ball is out of bounds
   point_detector.frames_out_of_bounds = point_detector.frames_out_of_bounds + 1 if not ball_in_bounds else 0
-  # if ball_in_bounds:
-  #   point_detector.frames_out_of_bounds = 0
-  # else:
-  #   point_detector.frames_out_of_bounds += 1
   
   # handle bounces
   if bounce_detected and point_detector.buffer < 0: #and not hit_detected:
@@ -221,7 +217,6 @@ while success:
   out.write(image)
 
   point_detector.update()
-  #point_detector.buffer = point_detector.buffer + 1 if point_detector.buffer < 6 and point_detector.buffer >= 0 else -1
 
   first_ball_data = prev_ball_data.copy()
   prev_ball_data = curr_ball_data.copy()
