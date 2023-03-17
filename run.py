@@ -95,11 +95,8 @@ while success:
   start_time = time()
   print(f"detecting frame: ${count}")
 
-  if count < 260:
-    success,image = player.read()
-    continue
-
   # frame_num = math.floor(count * audio_file.fps / video_file.fps)
+  # audio_reader.seek(frame_num)
   # audio = audio_utils.get_audio(audio_reader)
   # hit_detected = audio_utils.predict(audio, audio_model)[0] > 0.5
   # if hit_detected:
