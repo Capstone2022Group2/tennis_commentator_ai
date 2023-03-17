@@ -21,7 +21,7 @@ import tensorflow as tf
 import os
 
 obj_det_model = torch.hub.load('ultralytics/yolov5', 'custom', 'ai_models/object_detection/trained/object_detect5.pt')  # custom trained model
-obj_det_model.conf = 0.20
+obj_det_model.conf = 0.30
 event_det_model = event_mod.load_model('ai_models/event_detector/trained_model')
 
 # Images
@@ -60,13 +60,13 @@ event_det_model = event_mod.load_model('ai_models/event_detector/trained_model')
 # --------------------------------------------------------
 
 #----Detect using downloaded video----
-player = cv2.VideoCapture('no_commit/short_test.mp4')
+player = cv2.VideoCapture('no_commit/long_match.mp4')
 success,image = player.read()
 height, width, layers = image.shape
 size = (width, height)
 # ----------------------------------------------------------
 
-out = cv2.VideoWriter('no_commit/demo_test2.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
+out = cv2.VideoWriter('no_commit/long_match_demo.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
 
 first_ball_data = []
 prev_ball_data = []
@@ -90,6 +90,8 @@ display_hit = -1
 commentator = Commentator()
 
 first_bounce = True
+prev_side_of_court = 0
+side_of_court =0
 
 while success:
   skip = False
@@ -107,83 +109,119 @@ while success:
   # plot object detection boxes
   #boxes = det_objects.xyxyn[0][:, -1].numpy(), det_objects.xyxyn[0][:, :-1].numpy()
   boxes = det_objects.xyxy[0][:, -1].numpy(), det_objects.xyxy[0][:, :-1].numpy()
+  det = det_objects.xyxy[0]
 
   curr_ball_data, bounce_detected = detect_bounces(boxes,first_ball_data, prev_ball_data, count, event_det_model)
+
+  # if len(curr_ball_data) > 0:
+  #   point_detector.frames_no_ball_detected = 0
+  # else:
+  #   point_detector.frames_no_ball_detected += 1
+
+  if len(prev_ball_data) > 0:
+    result = get_side_of_court(det, prev_ball_data)
+    if result != None:
+      side_of_court = result
+  # else:
+  #   side_of_court = 0
+
   
-  # if len(curr_ball_data) > 0 and len(prev_ball_data) > 0 and len(first_ball_data) > 0:
-  #   # print(curr_ball_data)
-  #   # draw_box(image, curr_ball_data, (0, 255, 0))
-  #   # draw_box(image, prev_ball_data, (0, 255, 255))
-  #   # draw_box(image, first_ball_data, (0, 0, 255))
-  #   prev = get_center(prev_ball_data)
-  #   first = get_center(first_ball_data)
-  #   curr = get_center(curr_ball_data)
-  #   #print(prev)
-  #   cv2.circle(image, prev, 3, (255, 255, 0), 1)
-  #   cv2.circle(image, first, 3, (0, 0, 255), 1)
-  #   cv2.circle(image, curr, 3, (0, 255, 0), 1)
+  # check if the ball has switched sides
+  if side_of_court * prev_side_of_court < 0:
+    #print('side switch')
+    #point_detector.side_of_court = side_of_court
+    # reset last bounce, since a double bounce can't happen if ball switches sides
+    point_detector.side_of_last_bounce = 0
+
+  
+  if len(curr_ball_data) > 0 and len(prev_ball_data) > 0 and len(first_ball_data) > 0:
+    # print(curr_ball_data)
+    # draw_box(image, curr_ball_data, (0, 255, 0))
+    # draw_box(image, prev_ball_data, (0, 255, 255))
+    # draw_box(image, first_ball_data, (0, 0, 255))
+    prev = get_center(prev_ball_data)
+    first = get_center(first_ball_data)
+    curr = get_center(curr_ball_data)
+    #print(prev)
+    cv2.circle(image, prev, 3, (255, 255, 0), 1)
+    cv2.circle(image, first, 3, (0, 0, 255), 1)
+    cv2.circle(image, curr, 3, (0, 255, 0), 1)
   
   # doing this every frame for debug purpose
-  #det = det_objects.xyxy[0]
-  #image, boundaries = get_court_boundary(det, image, show_data=True)
-  # image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+  
+  image, boundaries = get_court_boundary(det, image, show_data=True)
+  image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
 
-  # TODO change this to happen on first hit
+  if ball_in_bounds:
+    point_detector.frames_out_of_bounds = 0
+  else:
+    point_detector.frames_out_of_bounds += 1
+  
   if bounce_detected and point_detector.buffer < 0: #and not hit_detected:
-    is_hit = check_if_ball_inside_player(boxes, prev_ball_data)
-    if not is_hit:
-      print('bounce')
-      # temporary until hit detection is implemented
-      if first_bounce:
-        display_point = 0
-        commentator.get_commentary('serve')
-        first_bounce = False
-        point_detector.reset()
-        #skip = True
-
-      unscaled_det = det_objects.xyxy[0]
-      
-      side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
-      print(side_of_court)
-      if point_detector.prev_bounce_in_bounds:
-        #side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
-
-        # point was scored
-        if point_detector.side_of_court * side_of_court > 0:
-          point_detector.reset()
-          point_detector.points += 1
-          display_point = 0
-          commentator.get_commentary('point')
-
-      elif not skip:
-        image, boundaries = get_court_boundary(prev_det, image, show_data=False)
-        point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
-        point_detector.side_of_court = side_of_court
-          
-          #TODO: figure out who scored the point
-
-
-      #TODO: give a point if the current bounce is out of bounds
-      
-      #   else:
-      #     image, boundaries = get_court_boundary(prev_det, image, show_data=False)
-      #     point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
-      #     point_detector.side_of_court = side_of_court
-      # else:
-      #   image, boundaries = get_court_boundary(prev_det, image, show_data=False)
-      #   point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
-      #   point_detector.side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
-
-      # det = det_objects.xyxy[0]
-      # image, boundaries = get_court_boundary(det, image, show_data=True)
-      # image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
-      display_bounce = 0
-      in_bounds = point_detector.prev_bounce_in_bounds
-      bounce_text = 'in bounds' if in_bounds else 'not in bounds'
-      bounce_count += 1
-      point_detector.buffer = 0
-      point_detector.side_of_court = side_of_court
+    #is_hit = check_if_ball_inside_player(boxes, prev_ball_data)
+    #print('bounce')
+    # temporary until hit detection is implemented
+    # TODO change this to happen on first hit
+    if first_bounce:
+      display_point = 0
+      commentator.get_commentary('serve')
+      first_bounce = False
+      point_detector.reset()
+      skip = True
     
+    #side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
+    
+
+    if point_detector.prev_bounce_in_bounds:
+      #side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
+      # print('prev bounce in bouncs')
+      # print(point_detector.side_of_last_bounce)
+      # print(side_of_court)
+      # point was scored
+      if point_detector.side_of_last_bounce * side_of_court > 0:
+        point_detector.reset()
+        point_detector.points += 1
+        display_point = 0
+        commentator.get_commentary('point')
+        point_detector.point_was_scored = True
+
+    elif not skip:
+      #image, boundaries = get_court_boundary(prev_det, image, show_data=False)
+      point_detector.prev_bounce_in_bounds = ball_in_bounds
+      
+        
+        #TODO: figure out who scored the point
+
+
+    #TODO: give a point if the current bounce is out of bounds
+    
+    #   else:
+    #     image, boundaries = get_court_boundary(prev_det, image, show_data=False)
+    #     point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+    #     point_detector.side_of_court = side_of_court
+    # else:
+    #   image, boundaries = get_court_boundary(prev_det, image, show_data=False)
+    #   point_detector.prev_bounce_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+    #   point_detector.side_of_court = get_side_of_court(unscaled_det, prev_ball_data)
+
+    # det = det_objects.xyxy[0]
+    # image, boundaries = get_court_boundary(det, image, show_data=True)
+    # image, ball_in_bounds = checkIfBallInBounds(prev_det, image, boundaries, show_data=False)
+    point_detector.side_of_last_bounce = side_of_court
+    display_bounce = 0
+    in_bounds = point_detector.prev_bounce_in_bounds
+    bounce_text = 'in bounds' if in_bounds else 'not in bounds'
+    bounce_count += 1
+    point_detector.buffer = 0
+    #point_detector.side_of_court = side_of_court
+  
+  # if the ball has been out of bounds or not detected for a long time, a point was probably scored 
+  if point_detector.frames_out_of_bounds > 60 and not point_detector.point_was_scored and not first_bounce:
+    point_detector.reset()
+    point_detector.points += 1
+    display_point = 0
+    commentator.get_commentary('point')
+    point_detector.point_was_scored = True
 
   ### DEBUG ###
   if display_bounce <= 5 and display_bounce >=0:
@@ -252,6 +290,8 @@ while success:
 
   first_ball_data = prev_ball_data.copy()
   prev_ball_data = curr_ball_data.copy()
+
+  prev_side_of_court = side_of_court if side_of_court != None else 0
   
   success,image = player.read()
 

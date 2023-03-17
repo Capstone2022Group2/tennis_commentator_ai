@@ -21,7 +21,7 @@ class Commentator:
     def __init__(self):
         load_dotenv()
         openai.api_key = os.getenv("OPENAI_API_KEY")
-        self.events = {'point': 'A player has just scored a point', 
+        self.events = {'point': 'A player has just scored a point. Keep it generic', 
                        'serve': 'A player has just served the ball'}
 
     def get_commentary(self, event):
@@ -52,8 +52,3 @@ class Commentator:
           self.text_color,
           self.text_thickness,
           self.line_type)
-
-# commentator = Commentator()
-# commentator.display_event('point')
-# print('--------------------------')
-# commentator.display_event('serve')

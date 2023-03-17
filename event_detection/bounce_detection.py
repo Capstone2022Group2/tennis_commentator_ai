@@ -113,18 +113,11 @@ def detect_bounces(boxes, first_ball_data, prev_ball_data, frame_num, event_det_
 
   # check for v shape
   if len(prev_ball_data) > 0 and len(first_ball_data) > 0 and len(curr_ball_data) > 0:
-    # scale boxes up
-    # get centers of boxes
     # if middle box center is lower than the others, it is a v shape
-
     first_center = get_center(first_ball_data)
     prev_center = get_center(prev_ball_data)
     curr_center = get_center(curr_ball_data)
-
-    # print(f'first: {first_center}')
-    # print(f'prev: {prev_center}')
-    # print(f'curr: {curr_center}')
-
+    
     # TODO maybe add a scaling factor to only detect larger v shapes
     if prev_center[1] > first_center[1] and prev_center[1] > curr_center[1]:
       bounce = True
