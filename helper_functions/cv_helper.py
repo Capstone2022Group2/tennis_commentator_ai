@@ -61,3 +61,9 @@ def plot_boxes(model, results, frame):
                 cv2.putText(frame, model.names[int(labels[i])], (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
 
         return frame
+
+def draw_box(image, data, bgr):
+  x_shape, y_shape = image.shape[1], image.shape[0]
+  x1, y1, x2, y2 = int(data[0]*x_shape), int(data[1]*y_shape), int(data[2]*x_shape), int(data[3]*y_shape)
+  cv2.rectangle(image, (x1, y1), (x2, y2), bgr, 1)
+  return image

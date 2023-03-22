@@ -5,8 +5,8 @@
 lib
 Include
 Scripts
+#*.txt
 .idea
-*.txt
 *.mp4
 *.mov
 !*dataset.txt
@@ -15,3 +15,4 @@ Scripts
 yolov5/runs
 venv
 audio_training.csv
+.env

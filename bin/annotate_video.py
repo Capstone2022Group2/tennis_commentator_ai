@@ -8,8 +8,15 @@ import os
 
 # python bin/annotate_video.py -v  no_commit/short_test.mp4 -o short_annotations -f 0
 
+
+def draw_box(image, data, bgr):
+  x_shape, y_shape = image.shape[1], image.shape[0]
+  x1, y1, x2, y2 = int(data[0]*x_shape), int(data[1]*y_shape), int(data[2]*x_shape), int(data[3]*y_shape)
+  cv2.rectangle(image, (x1, y1), (x2, y2), bgr, 1)
+  return image
+
 obj_det_model = torch.hub.load('ultralytics/yolov5', 'custom', 'ai_models/object_detection/trained/object_detect5.pt')  # custom trained model
-obj_det_model.conf = 0.4
+obj_det_model.conf = 0.2
 
 start_frame = 0
 end_frame = 0
@@ -53,6 +60,7 @@ success,image = vidcap.read()
 count = 0
 frame = 0
 
+first_frame_data = []
 prev_frame_data = []
 curr_frame_data = []
 
@@ -68,6 +76,7 @@ while success:
     labels, coord = det_objects.xyxyn[0][:, -1].numpy(), det_objects.xyxyn[0][:, :-1].numpy()
     if 0 not in labels:
         print('no ball')
+        first_frame_data = prev_frame_data.copy()
         prev_frame_data = []
         success,image = vidcap.read()
         continue
@@ -82,22 +91,26 @@ while success:
                   highest_conf = coord[i][4]
                   i_value = i
             i += 1
-        if len(prev_frame_data) > 0:
+        if len(prev_frame_data) > 0 and len(first_frame_data) > 0:
             print('ball')
             print(coord[i_value][4])
 
-            x_shape, y_shape = image.shape[1], image.shape[0]
-            x1, y1, x2, y2 = int(coord[i_value][0]*x_shape), int(coord[i_value][1]*y_shape), int(coord[i_value][2]*x_shape), int(coord[i_value][3]*y_shape)
-            bgr = (0, 255, 0)
-            cv2.rectangle(image, (x1, y1), (x2, y2), bgr, 1)
-
+            draw_box(image, first_frame_data, (0, 0, 255))
+            draw_box(image, prev_frame_data, (0, 255, 255))
+            draw_box(image, coord[i_value], (0, 255, 0))
+            
             curr_frame_data = coord[i_value][:-1]
-            event_data = np.concatenate([[frame], coord[i_value][:-1], prev_frame_data])
+            event_data = np.concatenate([[frame], curr_frame_data, prev_frame_data, first_frame_data])
             event_data = [str(i) + ' ' for i in event_data]
             print(event_data)
+
+            first_frame_data = prev_frame_data.copy()
+            prev_frame_data = curr_frame_data.copy()
+            
         else:
             # remove confidence value from coord array
             print('no previus data')
+            first_frame_data = prev_frame_data.copy()
             prev_frame_data = coord[i_value][:-1]
             skip = True
                    

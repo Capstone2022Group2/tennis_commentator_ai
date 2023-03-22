@@ -25,7 +25,7 @@ def getHSVColorRange(color):
     # highest value of color we want to accept
     hsv_color2[0] = (origional2[0] + 7) if origional2[0] + 7 <= 180 else 180 # H value cannot exceed 180
     hsv_color2[1] = (origional2[1] + 30) if origional2[1] + 30 <= 255 else 255 # S value cannot exceed 255
-    hsv_color2[2] = (origional2[2] + 40) if origional2[2] + 40 <= 255 else 255 
+    hsv_color2[2] = (origional2[2] + 25) if origional2[2] + 25 <= 255 else 255 
 
     # lowest value
     hsv_color1[0] = (origional1[0] - 7) if origional1[0] - 7 >= 0 else 0
@@ -75,7 +75,7 @@ def get_court_boundary(det, imo, show_data=False):
         reshape = cropped_image.reshape((cropped_image.shape[0] * cropped_image.shape[1], 3))
 
         # Find and display most dominant colors in the cropped image using kmeans cluster
-        cluster = KMeans(n_clusters=5).fit(reshape)
+        cluster = KMeans(n_clusters=4).fit(reshape)
 
         labels = np.arange(0, len(np.unique(cluster.labels_)) + 1)
         (hist, _) = np.histogram(cluster.labels_, bins = labels)
@@ -87,17 +87,17 @@ def get_court_boundary(det, imo, show_data=False):
 
         # get range of hsv colors for the two most dominant colors in the cropped image
         hsv_color1, hsv_color2 = getHSVColorRange(colors[len(colors)-1][1])
-        hsv_color3, hsv_color4 = getHSVColorRange(colors[len(colors)-2][1])
+        #hsv_color3, hsv_color4 = getHSVColorRange(colors[len(colors)-2][1])
 
         # create a black and white mask that only highlights the part of the image within the color ranges
         mask = cv2.inRange(img_hsv, hsv_color1, hsv_color2)
-        mask2 = cv2.inRange(img_hsv, hsv_color3, hsv_color4)
-        resMask = mask | mask2
+        #mask2 = cv2.inRange(img_hsv, hsv_color3, hsv_color4)
+        resMask = mask #| mask2
         #cv2.imshow('res mask', resMask)
 
         # arbitrarily choosing small rectangle structuring element to widen the gap between lines of the court
         # This makes is easier to eliminate the doubles area from the contours
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 2))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 4))
         resMask = cv2.morphologyEx(resMask, cv2.MORPH_OPEN, kernel)
 
         # get the largest contours of the mask.  This should be the outline of the court (more or less)
@@ -109,7 +109,7 @@ def get_court_boundary(det, imo, show_data=False):
         bmask = np.zeros((cropped_image.shape[0], cropped_image.shape[1]), np.uint8)
         bmask = cv2.drawContours(bmask,contours,-1,255, -1)
         #cv2.imshow('b mask', bmask)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
         dilate_mask = cv2.morphologyEx(bmask, cv2.MORPH_CLOSE, kernel)
         #cv2.imshow('dialate mask', dilate_mask)
         #cv2.waitKey(0) # waits until a key is pressed
@@ -140,7 +140,7 @@ def get_court_boundary(det, imo, show_data=False):
 
    
     # cv2.imshow('final', img)
-    # cv2.waitKey(0) # waits until a key is pressed
+    #cv2.waitKey(0) # waits until a key is pressed
     # cv2.destroyAllWindows() # destroys the window showing image
     
     return img, uni_hulls
