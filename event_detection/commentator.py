@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 class Commentator:
 
-    text_location = (250,680)
+    text_location = (150,550)
     text_font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 1
     text_thickness = 3
@@ -50,7 +50,7 @@ class Commentator:
     # TODO format this text nicely on screen
     def display_commentary(self, image):
 
-        if self.commentary_frames <= 30 and self.commentary_frames >=0:
+        if self.commentary_frames <= 40 and self.commentary_frames >=0:
             cv2.putText(image, self.current_commentary, 
             self.text_location, 
             cv2.FONT_HERSHEY_SIMPLEX, 

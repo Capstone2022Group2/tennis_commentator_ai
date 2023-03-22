@@ -60,20 +60,20 @@ event_det_model = event_mod.load_model('ai_models/event_detector/trained_model')
 # --------------------------------------------------------
 
 #----Detect using downloaded video----
-video_path = 'no_commit/long_match.mp4'
+video_path = 'no_commit/short_test.mp4'
 player = cv2.VideoCapture(video_path)
 success,image = player.read()
 height, width, layers = image.shape
 size = (width, height)
 # ----------------------------------------------------------
 
-out = cv2.VideoWriter('no_commit/long_match_demo2.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
+out = cv2.VideoWriter('no_commit/sound_test.avi',cv2.VideoWriter_fourcc(*"MJPG"), 20, size)
 
-# video_file = VideoFileClip(video_path)
-# audio_file = video_file.audio
-# audio_reader = audio_file.coreader().reader
-# audio_reader.seek(0)
-# audio_model = tf.keras.models.load_model('ai_models/audio_detector/trained_model', compile=False)
+video_file = VideoFileClip(video_path)
+audio_file = video_file.audio
+audio_reader = audio_file.coreader().reader
+audio_reader.seek(0)
+audio_model = tf.keras.models.load_model('ai_models/audio_detector/trained_model', compile=False)
 
 first_ball_data = []
 prev_ball_data = []
@@ -87,7 +87,7 @@ point_detector = PointDetector()
 display_hit = -1
 commentator = Commentator()
 
-first_bounce = True
+first_hit = True
 display_bounce = -1
 
 while success:
@@ -95,12 +95,15 @@ while success:
   start_time = time()
   print(f"detecting frame: ${count}")
 
-  # frame_num = math.floor(count * audio_file.fps / video_file.fps)
-  # audio_reader.seek(frame_num)
-  # audio = audio_utils.get_audio(audio_reader)
-  # hit_detected = audio_utils.predict(audio, audio_model)[0] > 0.5
-  # if hit_detected:
-  #     display_hit = 0
+  frame_num = math.floor(count * audio_file.fps / video_file.fps)
+  audio_reader.seek(frame_num)
+  audio = audio_utils.get_audio(audio_reader)
+  hit_detected = audio_utils.predict(audio, audio_model)[0] > 0.5
+  if hit_detected:
+      if first_hit:
+        commentator.set_commentary('serve')
+        first_hit = False
+      #display_hit = 0
 
   # get detected objects
   det_objects = obj_det_model(image)
@@ -140,12 +143,6 @@ while success:
   
   # handle bounces
   if bounce_detected and point_detector.buffer < 0: #and not hit_detected:
-    # temporary until hit detection is implemented
-    # TODO change this to happen on first hit
-    if first_bounce:
-      commentator.set_commentary('serve')
-      first_bounce = False
-      # point_detector.reset()
 
     # point was scored
     if point_detector.side_of_last_bounce * point_detector.side_of_court > 0 and point_detector.prev_bounce_in_bounds and not point_detector.point_was_scored:
