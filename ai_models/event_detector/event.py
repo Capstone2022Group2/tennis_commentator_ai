@@ -16,8 +16,8 @@ from tensorflow import keras
 #import compile_data
 #from .compile_data import *
 
-model_name = 'supposed_best_model.joblib'
-dataset_name = 'new_labels2_3_output.txt'
+model_name = 'replay_detection.joblib'
+dataset_name = 'labeled_replay_data.txt'
 
 def data_summary(X_train, y_train, X_test, y_test):
     """Summarize current state of dataset"""
@@ -31,7 +31,7 @@ def data_summary(X_train, y_train, X_test, y_test):
 # Gets the data with which to build and/or test a new model no_commit/annotations/full_annotations
 def get_data():
     print(f'{dataset_name}')
-    data = pd.read_fwf(os.path.join('no_commit/annotations/3_frame', dataset_name))
+    data = pd.read_fwf(os.path.join('no_commit/annotations/replay_annotations', dataset_name))
     #data = pd.read_fwf(os.path.join('ai_models/event_detector/dataset', 'dataset.txt'))
 
     # prep data
@@ -48,8 +48,8 @@ def get_data():
     x = data.drop(bounceColumnsKey, axis=1)#.drop(hitColumnsKey, axis=1)
     x.reset_index()
     #print(x)
-    x_train, x_test, y_train, y_test = train_test_split(x, bounce, test_size=0.2, random_state=100)
-    print()
+    x_train, x_test, y_train, y_test = train_test_split(x, bounce, test_size=0.2, random_state=100, shuffle=True)
+    #print()
     return (x_train, x_test, y_train, y_test)
 
 # Build a new model
@@ -59,10 +59,6 @@ def build_model(path):
     
     x_train, x_test, y_train, y_test = get_data()
     rf = RandomForestClassifier(max_depth=15, n_estimators=410, random_state=39)
-    #rf = RandomForestClassifier(max_depth=19, n_estimators=336, random_state=41)
-
-    # abc = AdaBoostClassifier(n_estimators=50,
-    #                      learning_rate=1)
 
     rf.fit(x_train, y_train)
     joblib.dump(rf, os.path.join(path, model_name ))
@@ -73,8 +69,8 @@ def load_model(path):
     #return keras.models.load_model("ai_models/event_detector/trained_model/nn2")
     
 # Display test results for the model that is loaded
-def print_test_matrix(path):
-    x_train, x_test, y_train, y_test = get_data()
+def print_test_matrix(path, x_test, y_test):
+    #x_train, x_test, y_train, y_test = get_data()
     rf = load_model(path)
     y_rf_test_pred = rf.predict(x_test)
     # get results
@@ -97,9 +93,9 @@ def predict_from_dict(data, path):
 
 def tune_hyperparameters(path):
     x_train, x_test, y_train, y_test = get_data()
-    # param_dist = {'n_estimators': randint(50,500),
-    #           'max_depth': randint(1,20),
-    #           'random_state': randint(1,50)}
+    param_dist = {'n_estimators': randint(50,100),
+              'max_depth': randint(1,10),
+              'random_state': randint(1,50)}
     # # param_dist = {'n_estimators': randint(50,500),
     # #           'learning_rate': randint(1,20),
     # #           'random_state': randint(1,50)}
@@ -109,17 +105,17 @@ def tune_hyperparameters(path):
     # param_dist = {'random_state': randint(1,50)}
 
     # # Create a random forest classifier
-    # rf = RandomForestClassifier()
+    rf = RandomForestClassifier()
     # #rf = AdaBoostClassifier()
     # #rf = svm.SVC()
     # #rf = tree.DecisionTreeClassifier()
     # #rf = LogisticRegression()
 
-    # # Use random search to find the best hyperparameters
-    # rand_search = RandomizedSearchCV(rf, 
-    #                                 param_distributions = param_dist, 
-    #                                 n_iter=5, 
-    #                                 cv=5)
+    # Use random search to find the best hyperparameters
+    rand_search = RandomizedSearchCV(rf, 
+                                    param_distributions = param_dist, 
+                                    n_iter=5, 
+                                    cv=5)
 
     # # Reshape data
     # x_train = x_train.reshape((x_train.shape[0], 1 * 20))
@@ -128,41 +124,43 @@ def tune_hyperparameters(path):
     # # x_test = x_test.astype('float32') / 255
 
     # # Categorically encode labels
-    y_train = keras.utils.to_categorical(y_train, 3)
-    y_test = keras.utils.to_categorical(y_test, 3)
+    # y_train = keras.utils.to_categorical(y_train, 3)
+    # y_test = keras.utils.to_categorical(y_test, 3)
 
-    # data_summary(x_train, y_train, x_test, y_test)
+    # # data_summary(x_train, y_train, x_test, y_test)
 
-    model = keras.models.Sequential()
-    # model.add(keras.layers.Dense(512,activation = 'relu',input_shape=(12,)))
-    # model.add(keras.layers.Dense(128,activation = 'relu'))                           
-    # model.add(keras.layers.Dense(2,activation = 'softmax'))
-    model.add(keras.layers.Dense(10,activation = 'relu',input_shape=(12,)))
-    #model.add(keras.layers.Dropout(0.5, noise_shape = None, seed = None))
-    model.add(keras.layers.Dense(8,activation = 'relu'))
-    #model.add(keras.layers.Dropout(0.5, noise_shape = None, seed = None))
-    model.add(keras.layers.Dense(6,activation = 'relu'))
-    model.add(keras.layers.Dropout(0.5, noise_shape = None, seed = None))                               
-    model.add(keras.layers.Dense(3,activation = 'softmax'))
-    model.compile(optimizer = 'adam',loss='categorical_crossentropy',metrics =['categorical_accuracy'])
+    # model = keras.models.Sequential()
+    # # model.add(keras.layers.Dense(512,activation = 'relu',input_shape=(12,)))
+    # # model.add(keras.layers.Dense(128,activation = 'relu'))                           
+    # # model.add(keras.layers.Dense(2,activation = 'softmax'))
+    # model.add(keras.layers.Dense(10,activation = 'relu',input_shape=(12,)))
+    # #model.add(keras.layers.Dropout(0.5, noise_shape = None, seed = None))
+    # model.add(keras.layers.Dense(8,activation = 'relu'))
+    # #model.add(keras.layers.Dropout(0.5, noise_shape = None, seed = None))
+    # model.add(keras.layers.Dense(6,activation = 'relu'))
+    # model.add(keras.layers.Dropout(0.5, noise_shape = None, seed = None))                               
+    # model.add(keras.layers.Dense(3,activation = 'softmax'))
+    # model.compile(optimizer = 'adam',loss='categorical_crossentropy',metrics =['categorical_accuracy'])
 
-    model.fit(x_train.values, y_train,
-          epochs=1300,
-          validation_data=(x_test.values, y_test))
+    # model.fit(x_train.values, y_train,
+    #       epochs=1300,
+    #       validation_data=(x_test.values, y_test))
     
-    score = model.evaluate(x_test.values, y_test, verbose=0)
-    print('Test loss:', score[0])
-    print('Test accuracy:', score[1])
+    # score = model.evaluate(x_test.values, y_test, verbose=0)
+    # print('Test loss:', score[0])
+    # print('Test accuracy:', score[1])
 
-    model.save('ai_models/event_detector/trained_model/nn2')
+    # model.save('ai_models/event_detector/trained_model/nn2')
     # Fit the random search object to the data
-    # rand_search.fit(x_train, y_train)
+    rand_search.fit(x_train, y_train)
 
-    # best_rf = rand_search.best_estimator_
-    # joblib.dump(best_rf, os.path.join(path, model_name ))
+    best_rf = rand_search.best_estimator_
+    joblib.dump(best_rf, os.path.join(path, model_name ))
 
-    # # Print the best hyperparameters
-    # print('Best hyperparameters:',  rand_search.best_params_)
+    # Print the best hyperparameters
+    print('Best hyperparameters:',  rand_search.best_params_)
+
+    print_test_matrix('ai_models/event_detector/trained_model', x_test, y_test)
 
 if (__name__ == "__main__"):
     # path = 'trained_model'

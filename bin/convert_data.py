@@ -6,7 +6,7 @@ import random
 
 
 annotations = {}
-with open(os.path.join('no_commit/annotations/3_frame', 'new_annotations.csv'), 'r') as f:
+with open(os.path.join('no_commit/annotations/replay_annotations', 'replay_annotations.csv'), 'r') as f:
         reader = csv.reader(f, delimiter=',')
         i=0
         for row in reader:
@@ -14,7 +14,7 @@ with open(os.path.join('no_commit/annotations/3_frame', 'new_annotations.csv'), 
             i+=1
 
 output = {}
-with open('no_commit/annotations/3_frame/data.txt', "r") as file:
+with open('no_commit/annotations/replay_annotations/replay_data.txt', "r") as file:
             fileData = file.read()
             lines = fileData.split('\n')
             
@@ -37,6 +37,7 @@ with open('no_commit/annotations/3_frame/data.txt', "r") as file:
                     # del tokens[2]
                     # del tokens[1]
                     del tokens[0]
+                    #print(len(tokens))
 
                     # if annotations[i] == 'hit':
                     #     tokens = np.concatenate([tokens, [1,0]])
@@ -66,16 +67,26 @@ with open('no_commit/annotations/3_frame/data.txt', "r") as file:
                     # else:
                     #     tokens = np.concatenate([tokens, [0]])
 
-                    if annotations[i] == 'hit':
-                        i +=1
-                        continue
-                    elif annotations[i] == 'bounce':
+                    # if annotations[i] == 'hit':
+                    #     i +=1
+                    #     continue
+                    # elif annotations[i] == 'bounce':
+                    #     tokens = np.concatenate([tokens, [1]])
+                    # else:
+                    #     if random.randint(0,11) == 0:
+                    #         i +=1
+                    #         continue 
+                    #     tokens = np.concatenate([tokens, [0]])
+
+                    if annotations[i] == 'none':
+                        tokens = np.concatenate([tokens, [0]])
+                    elif annotations[i] == 'game':
                         tokens = np.concatenate([tokens, [1]])
                     else:
-                        if random.randint(0,11) == 0:
-                            i +=1
-                            continue 
-                        tokens = np.concatenate([tokens, [0]])
+                        # if random.randint(0,11) == 0:
+                        #     i +=1
+                        #     continue 
+                        tokens = np.concatenate([tokens, [2]])
 
                     # tokens = [token for token in tokens]
                     output[i] = tokens
@@ -84,6 +95,6 @@ with open('no_commit/annotations/3_frame/data.txt', "r") as file:
 
 df = pd.DataFrame.from_dict(output, orient='index')
 #df = df.loc[(df!=0).any(axis=1)] # this line deletes all rows that are all zeroes. don't ask me about this. i don't know. but it does work.
-with open(os.path.join('no_commit/annotations/3_frame', 'no_hit.txt'), 'w+') as f:   
+with open(os.path.join('no_commit/annotations/replay_annotations', 'labeled_replay_data.txt'), 'w+') as f:   
     f.write(df.to_string(index=False))
                     

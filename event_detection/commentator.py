@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 class Commentator:
 
-    text_location = (150,550)
+    text_location = (50,550)
     text_font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 1
     text_thickness = 3
@@ -17,13 +17,17 @@ class Commentator:
     commentary_frames = -1
 
     current_commentary = ''
-    default = 'Fantastic shot by the player! That was a great display of agility, quick reflexes, and excellent technique. Both players are clearly showing their exceptional skills, and we can expect an exciting match today!'
+    # in case of API errors
+    default = {'point': 'Fantastic shot by the player! That was a great display of agility, quick reflexes, and excellent technique. Both players are clearly showing their exceptional skills, and we can expect an exciting match today!',
+               'serve': 'And we are off with a strong serve from the player!',
+               'replay': 'Now let\'s check out a replay of that last rally'}
 
     def __init__(self):
         load_dotenv()
         openai.api_key = os.getenv("OPENAI_API_KEY")
         self.events = {'point': 'A player has just scored a point. Keep it generic', 
-                       'serve': 'A player has just served the ball'}
+                       'serve': 'A player has just served the ball',
+                       'replay': 'A replay of the last point is being shown.  Don\'t talk about the specifics of the rally'}
 
     def set_commentary(self, event):
         
@@ -44,13 +48,13 @@ class Commentator:
             print(self.current_commentary)
         except Exception as e:
             print(e)
-            self.current_commentary = self.default
+            self.current_commentary = self.default[event]
         
         
     # TODO format this text nicely on screen
     def display_commentary(self, image):
 
-        if self.commentary_frames <= 40 and self.commentary_frames >=0:
+        if self.commentary_frames <= 100 and self.commentary_frames >=0:
             cv2.putText(image, self.current_commentary, 
             self.text_location, 
             cv2.FONT_HERSHEY_SIMPLEX, 
