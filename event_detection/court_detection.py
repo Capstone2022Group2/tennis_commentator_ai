@@ -97,7 +97,7 @@ def get_court_boundary(det, imo, show_data=False):
 
         # arbitrarily choosing small rectangle structuring element to widen the gap between lines of the court
         # This makes is easier to eliminate the doubles area from the contours
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 3))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 2))
         resMask = cv2.morphologyEx(resMask, cv2.MORPH_OPEN, kernel)
 
         # get the largest contours of the mask.  This should be the outline of the court (more or less)

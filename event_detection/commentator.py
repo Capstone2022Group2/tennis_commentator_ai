@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 class Commentator:
 
-    text_location = (50,550)
+    text_location = (25,550)
     text_font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 1
     text_thickness = 3
@@ -18,7 +18,7 @@ class Commentator:
 
     current_commentary = ''
     # in case of API errors
-    default = {'point': 'Fantastic shot by the player! That was a great display of agility, quick reflexes, and excellent technique. Both players are clearly showing their exceptional skills, and we can expect an exciting match today!',
+    default = {'point': 'Fantastic shot by the player! That was a great display of agility, quick reflexes, and excellent technique. We can expect an exciting match today!',
                'serve': 'And we are off with a strong serve from the player!',
                'replay': 'Now let\'s check out a replay of that last rally'}
 
