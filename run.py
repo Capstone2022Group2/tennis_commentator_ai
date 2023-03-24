@@ -30,12 +30,12 @@ replay_det_model = event_mod.load_model('ai_models/event_detector/trained_model'
 # Images
 
 ################TEST#######################################
-url = 'no_commit/event_debug/frame11.jpg'  # or file, Path, URL, PIL, OpenCV, numpy, list
-results = obj_det_model (url)
-#det = results.xyxy[0]
-# print(det)
-img = cv2.imread(url)
-boxes = results.xyxy[0][:, -1].numpy(), results.xyxy[0][:, :-1].numpy()
+# url = 'no_commit/event_debug/frame11.jpg'  # or file, Path, URL, PIL, OpenCV, numpy, list
+# results = obj_det_model (url)
+# #det = results.xyxy[0]
+# # print(det)
+# img = cv2.imread(url)
+# boxes = results.xyxy[0][:, -1].numpy(), results.xyxy[0][:, :-1].numpy()
 
 #is_replay(img, boxes)
 #labels, coord = results.xyxy[0][:, -1].numpy(), results.xyxy[0][:, :-1].numpy()
