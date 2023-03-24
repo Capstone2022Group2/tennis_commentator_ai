@@ -13,9 +13,8 @@ class ReplayDetector:
         return results
 
     def confirm_if_replay(self, objects, current_points):
-        ball_data = objects[0:4]
-        # print(ball_data)
-        # print(sum(ball_data))
+        #ball_data = objects[0:4]
+
         if current_points < self.expected_points:
             return False
 

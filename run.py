@@ -97,21 +97,13 @@ replay_detector = ReplayDetector()
 first_hit = True
 display_bounce = -1
 
-# replay_began = False
-# replay_playing = False
-# replay_ended = False
-# in_rally = False
-
 while success:
   count +=1
   start_time = time()
   print(f"detecting frame: ${count}")
 
-  
-
   # get detected objects
   det_objects = obj_det_model(image)
-  #boxes = det_objects.xyxyn[0][:, -1].numpy(), det_objects.xyxyn[0][:, :-1].numpy()
   boxes = det_objects.xyxy[0][:, -1].numpy(), det_objects.xyxy[0][:, :-1].numpy()
   det = det_objects.xyxy[0]
 
@@ -125,7 +117,6 @@ while success:
     if not point_detector.point_was_scored and not first_hit:
       point_detector.reset()
       point_detector.points += 1
-      #point_detector.point_was_scored = True
       commentator.set_commentary('point')
     point_detector.point_was_scored = False
     first_hit = True
@@ -140,33 +131,10 @@ while success:
   else:
     replay_detector.replay_frames = 0
 
-
-  
-  # if is_replay(image, boxes):
-  #   if point_detector.points > 0:
-  #     if not replay_began:
-  #       replay_began = True
-  #       in_rally = False
-  #       commentator.set_commentary('replay')
-  #     elif not replay_ended and replay_playing:
-  #       replay_ended = True
-  # else:
-  #   if point_detector.points == 0:
-  #     in_rally = True
-  #   if replay_began:
-  #     replay_playing = True
-  #   if replay_ended:
-  #     replay_began = False
-  #     replay_playing = False
-  #     replay_ended = False
-  #     first_hit = True
-  #     in_rally = True
-  #     point_detector.point_was_scored = False
-
+  # only do this if the game status is in the middle of a rally
   if game_status == 1:
-    # frame_num = math.floor(count * audio_file.fps / video_file.fps)
-    # audio_reader.seek(frame_num)
-    # audio = audio_utils.get_audio(audio_reader)
+
+    # only check for hits until the first hit is detected for now
     if first_hit:
       frame_num = math.floor(count * audio_file.fps / video_file.fps)
       audio_reader.seek(frame_num)
@@ -221,7 +189,6 @@ while success:
       bounce_count += 1
       point_detector.bounce_detected(ball_in_bounds)
       display_bounce = 0
-      #point_detector.side_of_court = side_of_court
     
     # if the ball has been out of bounds or not detected for a long time, a point was probably scored 
     # if point_detector.frames_out_of_bounds > 110 and not point_detector.point_was_scored and not first_hit:
@@ -261,14 +228,6 @@ while success:
             (0,0, 255),
             4,
             3)
-
-    # cv2.putText(image,str(bounce_count), 
-    #           (80,680), 
-    #           cv2.FONT_HERSHEY_SIMPLEX, 
-    #           2,
-    #           (0,0, 255),
-    #           3,
-    #           3)
 
     point_detector.update()
 
