@@ -90,7 +90,7 @@ def get_center(box):
     # center of the ball
     return (int(x)+int(w)//2, int(y)+int(h)//2)
 
-def detect_bounces(boxes, first_ball_data, prev_ball_data, frame_num, event_det_model):
+def detect_bounces(boxes, first_ball_data, prev_ball_data):
   labels, coord = boxes
   i = 0
   bounce = False
@@ -110,6 +110,8 @@ def detect_bounces(boxes, first_ball_data, prev_ball_data, frame_num, event_det_
       i += 1
     
     curr_ball_data = coord[i_value][:-1]
+
+  # TODO check for other types of bounces
 
   # check for v shape
   if len(prev_ball_data) > 0 and len(first_ball_data) > 0 and len(curr_ball_data) > 0:
