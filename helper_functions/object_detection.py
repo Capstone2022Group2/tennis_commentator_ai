@@ -39,7 +39,7 @@ def get_objects_with_highest_conf(det_objects):
 
     # players
     player_data = []
-    highest_conf = 0.01
+    highest_conf = 0
     second_conf = 0
     i_value = -1
     s_value = -2
@@ -74,7 +74,7 @@ def get_objects_with_highest_conf(det_objects):
 
     # courts
     court_data = []
-    highest_conf = 0.01
+    highest_conf = 0
     second_conf = 0
     i_value = -1
     s_value = -2

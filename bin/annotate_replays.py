@@ -25,8 +25,8 @@ out_path = ''
 
 try:
   opts, args = getopt.getopt(sys.argv[1:],"v:o:f:")
-except getopt.GetoptError:
-  print('error')
+except getopt.GetoptError as e:
+  print(e)
   sys.exit(2)
 
 if '-o' not in [options[0] for options in opts]:
@@ -57,13 +57,7 @@ data_file = open(f'{out_path}/replay_data.txt', 'a')
 
 vidcap = cv2.VideoCapture(video_path)
 success,image = vidcap.read()
-# count = 0
 frame = 0
-
-# first_frame_data = []
-# prev_frame_data = []
-# curr_frame_data = []
-
 
 player1 = []
 player2 = []
@@ -124,7 +118,7 @@ while success:
 
         # players
         player_data = []
-        highest_conf = 0.01
+        highest_conf = 0
         second_conf = 0
         i_value = -1
         s_value = -2
@@ -159,7 +153,7 @@ while success:
 
         # courts
         court_data = []
-        highest_conf = 0.01
+        highest_conf = 0
         second_conf = 0
         i_value = -1
         s_value = -2

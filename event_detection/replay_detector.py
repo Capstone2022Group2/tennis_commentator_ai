@@ -8,12 +8,10 @@ class ReplayDetector:
     
     def check_game_status(self, data, model):
         results = model.predict(data.reshape(1, -1))
-        print(results)
 
         return results
 
-    def confirm_if_replay(self, objects, current_points):
-        #ball_data = objects[0:4]
+    def confirm_if_replay(self, current_points):
 
         if current_points < self.expected_points:
             return False
@@ -24,8 +22,4 @@ class ReplayDetector:
             return True
         else:
             return False
-        # if sum(ball_data) == 0:
-        #     return False
-        
-        return True
     

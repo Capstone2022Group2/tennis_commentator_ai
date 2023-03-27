@@ -106,9 +106,7 @@ while success:
   det = det_objects.xyxy[0]
 
   highest_conf_objects = get_objects_with_highest_conf(det_objects)
-  #print(highest_conf_objects)
   game_status = replay_detector.check_game_status(highest_conf_objects, replay_det_model)
-  isreplay = replay_detector.confirm_if_replay(highest_conf_objects, point_detector.points)
 
   # Allow points to be scored and serves to be detected again 
   if game_status == 0:
@@ -122,7 +120,7 @@ while success:
   # double check for false positive replay
   if game_status == 2:
     replay_detector.replay_frames +=1
-    isreplay = replay_detector.confirm_if_replay(highest_conf_objects, point_detector.points)
+    isreplay = replay_detector.confirm_if_replay(point_detector.points)
     if isreplay:
       replay_detector.expected_points += 1
       commentator.set_commentary('replay')
