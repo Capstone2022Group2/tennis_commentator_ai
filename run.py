@@ -11,11 +11,9 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 from ai_models.audio_detector import audio_utils
 from event_detection.bounce_detection import *
 from event_detection.court_detection import *
-# from event_detection.detect_replay import *
 from event_detection.point_detector import PointDetector
 from event_detection.commentator import Commentator
 from event_detection.replay_detector import ReplayDetector
-# from event_detection.check_game_status import *
 from helper_functions.cv_helper import plot_boxes
 from helper_functions.object_detection import get_objects_with_highest_conf
 import ai_models.event_detector.event as event_mod
@@ -25,7 +23,7 @@ import os
 obj_det_model = torch.hub.load('ultralytics/yolov5', 'custom', 'ai_models/object_detection/trained/object_detect5.pt')  # custom trained model
 obj_det_model.conf = 0.30
 #event_det_model = event_mod.load_model('ai_models/event_detector/trained_model')
-replay_det_model = event_mod.load_model('ai_models/event_detector/trained_model')
+replay_det_model = event_mod.load_model('ai_models/replay_detector/trained_models')
 
 # Images
 
